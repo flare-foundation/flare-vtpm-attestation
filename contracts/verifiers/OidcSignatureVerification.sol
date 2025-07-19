@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.27;
 
 import {SignatureVerificationFailed} from "../types/Common.sol";
 import {Header, RSAPubKey} from "../types/OidcStructs.sol";

@@ -6,17 +6,16 @@ evm_version = "london"
 solc = "0.8.27"
 optimizer = true
 optimizer_runs = 200
-block_gas_limit = 8000000
+block_gas_limit = 15000000
 verbosity=2
 
-# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
-remappings = [
-    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/"
-]
-
 [rpc_endpoints]
-flare = "https://flare-api.flare.network/ext/C/rpc"
-coston2 = "https://coston2-api.flare.network/ext/C/rpc"
+flare = "${FLARE_RPC_URL}"
+coston2 = "${COSTON2_RPC_URL}"
+
+[etherscan]
+flare = { key = "${FLARESCAN_API_KEY}", chain = 14, url = "${FLARE_FLARESCAN_URL}" }
+coston2 = { key = "${FLARESCAN_API_KEY}", chain = 114, url = "${COSTON2_FLARESCAN_URL}" }
 
 [fmt]
 sort_imports=true

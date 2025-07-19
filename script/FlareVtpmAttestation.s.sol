@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.27;
 
 import {FlareVtpmAttestation} from "../contracts/FlareVtpmAttestation.sol";
 import {OidcSignatureVerification} from "../contracts/verifiers/OidcSignatureVerification.sol";
 import {Script, console} from "forge-std/Script.sol";
 
 contract FlareVtpmAttestationScript is Script {
-    uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+    uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
     string hwmodel = vm.envString("HWMODEL");
     string swname = vm.envString("SWNAME");
     string imageDigest = vm.envString("IMAGE_DIGEST");

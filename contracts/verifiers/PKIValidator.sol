@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.27;
 
 import {BigNumber} from "../utils/BigNumber.sol";
 
@@ -8,8 +8,6 @@ import {JWTHandler} from "../utils/JWTHandler.sol";
 import {PKICertificateParser} from "../utils/PKICertificateParser.sol";
 
 contract PKIValidator {
-    using BigNumber for BigNumber.BigNum;
-
     // Errors
     error InvalidSignature();
     error InvalidCertificate();
@@ -31,17 +29,19 @@ contract PKIValidator {
         returns (ValidationResult memory)
     {
         // 1. Parse the stored root certificate
-        Certificate memory storedRootCert = PKICertificateParser.decodeAndParseCertificate(string(storedRootCertBytes));
+        PKICertificateParser.Certificate memory storedRootCert =
+            PKICertificateParser.decodeAndParseCertificate(string(storedRootCertBytes));
 
         // 2. Get JWT headers and validate algorithm
-        JWTHeaders memory headers = JWTHandler.getUnverifiedHeader(attestationToken);
+        JWTHandler.JWTHeaders memory headers = JWTHandler.getUnverifiedHeader(attestationToken);
         if (keccak256(bytes(headers.alg)) != keccak256(bytes("RS256"))) {
             emit ValidationFailure(keccak256(bytes(attestationToken)), "Invalid algorithm");
             return ValidationResult({isValid: false, message: "Invalid algorithm - expected RS256", payload: ""});
         }
 
         // 3. Extract and validate certificates from x5c header
-        PKICertificates memory certificates = PKICertificateParser.extractCertificateFromX5cHeader(headers.x5c);
+        PKICertificateParser.PKICertificates memory certificates =
+            PKICertificateParser.extractCertificateFromX5cHeader(headers.x5c);
 
         // 4. Convert certificate public key to BigNum format for RSA operations
         BigNumber.BigNum memory publicKey = convertPublicKeyToBigNum(certificates.leafCert.publicKey);
@@ -68,23 +68,28 @@ contract PKIValidator {
     }
 
     // Helper function to verify certificate chain using RSA
-    function verifyCertificateChainWithRSA(PKICertificates memory certs, Certificate memory storedRoot)
-        internal
-        view
-        returns (bool)
-    {
-        // 1. Verify root certificate matches stored root
-        if (!compareCertificatesWithRSA(certs.rootCert, storedRoot)) {
-            return false;
-        }
+    function verifyCertificateChainWithRSA(
+        PKICertificateParser.PKICertificates memory certs,
+        PKICertificateParser.Certificate memory storedRoot
+    ) internal view returns (bool) {
+        // TODO: 1. Verify root certificate matches stored root
+        // if (!PKICertificateParser.compareCertificatesWithRSA(certs.rootCert, storedRoot)) {
+        //     return false;
+        // }
 
-        // 2. Verify intermediate cert is signed by root
-        if (!verifyRSASignature(certs.intermediateCert, convertPublicKeyToBigNum(certs.rootCert.publicKey))) {
-            return false;
-        }
+        // TODO: 2. Verify intermediate cert is signed by root
+        // if (
+        //     !PKICertificateParser.verifyRSASignature(
+        //         certs.intermediateCert, convertPublicKeyToBigNum(certs.rootCert.publicKey)
+        //     )
+        // ) {
+        //     return false;
+        // }
 
-        // 3. Verify leaf cert is signed by intermediate
-        return verifyRSASignature(certs.leafCert, convertPublicKeyToBigNum(certs.intermediateCert.publicKey));
+        // TODO: 3. Verify leaf cert is signed by intermediate
+        // return PKICertificateParser.verifyRSASignature(
+        //     certs.leafCert, convertPublicKeyToBigNum(certs.intermediateCert.publicKey)
+        // );
     }
 
     // Helper function to verify JWT signature using RSA
@@ -100,14 +105,16 @@ contract PKIValidator {
         string memory signedData = string.concat(parts.header, ".", parts.payload);
 
         // 3. Decode signature from base64
-        bytes memory signatureBytes = CryptoUtils.base64Decode(parts.signature);
+        // TODO
+        bytes memory signatureBytes = PKICertificateParser.base64Decode(parts.signature);
 
         // 4. Convert signature to BigNum
         BigNumber.BigNum memory signature = bytesToBigNum(signatureBytes);
 
         // 5. Perform RSA verification
-        BigNumber.BigNum memory modulus = getModulusFromPublicKey(publicKey);
-        BigNumber.BigNum memory exponent = getExponentFromPublicKey(publicKey);
+        // TODO
+        BigNumber.BigNum memory modulus = PKICertificateParser.getModulusFromPublicKey(publicKey);
+        BigNumber.BigNum memory exponent = PKICertificateParser.getExponentFromPublicKey(publicKey);
 
         // 6. Calculate s^e mod n
         BigNumber.BigNum memory calculated = publicKey.modPow(signature, exponent, modulus);

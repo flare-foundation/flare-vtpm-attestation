@@ -7,7 +7,7 @@ Verification cost: Approx. 2M gas
 
 ## Requirements
 
-- [Solidity](https://soliditylang.org) v0.8.20 or higher
+- [Solidity](https://soliditylang.org) v0.8.27 or higher
 - [Foundry](https://getfoundry.sh)
 
 ## Usage
@@ -38,7 +38,7 @@ forge test -vv
 To deploy the contracts, you can use a Foundry script along with your preferred RPC URL and private key:
 
 ```bash
-forge script script/FlareVtpmAttestation.s.sol:FlareVtpmAttestationScript --rpc-url <your_rpc_url> --private-key <your_private_key>
+forge script script/FlareVtpmAttestation.s.sol:FlareVtpmAttestationScript --rpc-url ${FLARE_RPC_URL} --private-key ${DEPLOYER_PRIVATE_KEY}
 ```
 
 To maintain code consistency and adhere to Solidity style guidelines, format the code with:

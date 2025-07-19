@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.27;
 
-contract PKICertificateParser {
+library PKICertificateParser {
     // Custom errors for certificate parsing
     error InvalidX5CLength(uint256 length);
     error InvalidBase64();
@@ -34,7 +34,7 @@ contract PKICertificateParser {
         bytes serialNumber;
     }
 
-    function extractCertificateFromX5cHeader(string[] memory x5cHeaders) public pure returns (PKICertificates memory) {
+    function extractCertificateFromX5cHeader(string[] memory x5cHeaders) public view returns (PKICertificates memory) {
         // Validate number of certificates
         if (x5cHeaders.length != 3) {
             revert InvalidX5CLength(x5cHeaders.length);
@@ -49,7 +49,7 @@ contract PKICertificateParser {
         return PKICertificates({leafCert: leafCert, intermediateCert: intermediateCert, rootCert: rootCert});
     }
 
-    function decodeAndParseCertificate(string memory certificateStr) public pure returns (Certificate memory) {
+    function decodeAndParseCertificate(string memory certificateStr) public view returns (Certificate memory) {
         // Remove PEM headers and whitespace (simplified version)
         bytes memory rawBytes = cleanAndDecodeBase64(certificateStr);
 
@@ -173,7 +173,7 @@ contract PKICertificateParser {
         return serialNumber;
     }
 
-    function extractValidityPeriod(bytes memory asn1Data) internal pure returns (uint256, uint256) {
+    function extractValidityPeriod(bytes memory /* asn1Data */ ) internal view returns (uint256, uint256) {
         // Simplified validity period extraction
         // TODO: In real implementation, would need proper ASN.1 parsing
         return (
@@ -188,7 +188,7 @@ contract PKICertificateParser {
         return slice(asn1Data, 0, 32); // Example: return first 32 bytes
     }
 
-    function extractSignatureAlgorithm(bytes memory asn1Data) internal pure returns (string memory) {
+    function extractSignatureAlgorithm(bytes memory /* asn1Data */ ) internal pure returns (string memory) {
         // Simplified signature algorithm extraction
         return "sha256";
     }
@@ -198,7 +198,11 @@ contract PKICertificateParser {
         return slice(derBytes, derBytes.length - 64, 64); // Example: last 64 bytes
     }
 
-    function verifySignature(Certificate memory cert, bytes memory issuerPublicKey) internal pure returns (bool) {
+    function verifySignature(Certificate memory, /* cert */ bytes memory /* issuerPublicKey  */ )
+        internal
+        pure
+        returns (bool)
+    {
         // Would need proper RSA signature verification
         // TODO: This is a placeholder that always returns true
         return true;
