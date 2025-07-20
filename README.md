@@ -9,6 +9,7 @@ Verification cost: Approx. 2M gas
 
 - [Solidity](https://soliditylang.org) v0.8.27 or higher
 - [Foundry](https://getfoundry.sh)
+- [uv](https://docs.astral.sh/uv/) (for example scripts)
 
 ## Usage
 
@@ -46,3 +47,21 @@ To maintain code consistency and adhere to Solidity style guidelines, format the
 ```bash
 forge fmt
 ```
+
+# Python
+
+The example logic is already written out in Python. To run it:
+
+```bash
+cd py/
+uv sync --all-extras
+```
+
+Example attestation tokens are stored in `py/data/`, to test them:
+
+```bash
+uv run pki_attestation_validation.py
+uv run oidc_attestation_validation.py
+```
+
+Note these actual validation may fail as the attestation tokens may be outdated.

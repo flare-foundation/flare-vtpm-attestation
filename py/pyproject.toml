@@ -26,37 +26,11 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["ALL"]
-ignore = ["D", "COM812", "ISC001", "T201", "T203"]
+ignore = ["D", "COM812", "ISC001", "T201", "T203", "TRY003", "PLR2004", "EM", "G004"]
 
 [tool.ruff.format]
 docstring-code-format = true
 
 [tool.pyright]
 pythonVersion = "3.12"
-strictListInference = true
-strictDictionaryInference = true
-strictSetInference = true
-deprecateTypingAliases = true
-disableBytesTypePromotions = true
-reportUnusedClass = true
-reportUnusedFunction = true
-reportUntypedFunctionDecorator = true
-reportUntypedClassDecorator = true
-reportPrivateUsage = true
-reportTypeCommentUsage = true
-reportConstantRedefinition = true
-reportDeprecated = true
-reportInconsistentConstructor = true
-reportUninitializedInstanceVariable = true
-reportMissingParameterType = true
-reportCallInDefaultInitializer = true
-reportUnnecessaryIsInstance = true
-reportUnnecessaryCast = true
-reportUnnecessaryComparison = true
-reportUnnecessaryContains = true
-reportInvalidStubStatement = true
-reportUnusedExpression = true
-reportUnnecessaryTypeIgnoreComment = true
-reportMatchNotExhaustive = true
-reportImplicitOverride = true
-reportShadowedImports = true
+typeCheckingMode = "strict"
