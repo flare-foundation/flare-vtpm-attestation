@@ -255,4 +255,102 @@ contract FlareVtpmAttestationTest is Test {
         }
         return type(uint256).max;
     }
+
+    /**
+     * @dev Tests that verifyAndAttest reverts when the contract is paused.
+     */
+    function test_verifyAndAttest_WhenPaused() public {
+        // Pause the contract
+        flareVtpm.pause();
+
+        // Expect the function to revert with EnforcedPause error
+        vm.expectRevert(abi.encodeWithSignature("EnforcedPause()"));
+
+        // Attempt to perform verification and attestation while paused
+        flareVtpm.verifyAndAttest(HEADER, PAYLOAD, SIGNATURE);
+    }
+
+    /**
+     * @dev Tests that setBaseQuoteConfig reverts when the contract is paused.
+     */
+    function test_setBaseQuoteConfig_WhenPaused() public {
+        // Pause the contract
+        flareVtpm.pause();
+
+        // Expect the function to revert with EnforcedPause error
+        vm.expectRevert(abi.encodeWithSignature("EnforcedPause()"));
+
+        // Attempt to set base quote config while paused
+        flareVtpm.setBaseQuoteConfig(HWMODEL, SWNAME, IMAGEDIGEST, ISS, SECBOOT);
+    }
+
+    /**
+     * @dev Tests that setTokenTypeVerifier reverts when the contract is paused.
+     */
+    function test_setTokenTypeVerifier_WhenPaused() public {
+        // Pause the contract
+        flareVtpm.pause();
+
+        // Expect the function to revert with EnforcedPause error
+        vm.expectRevert(abi.encodeWithSignature("EnforcedPause()"));
+
+        // Attempt to set token type verifier while paused
+        flareVtpm.setTokenTypeVerifier(address(oidcVerifier));
+    }
+
+    /**
+     * @dev Tests that functions work normally after unpausing the contract.
+     */
+    function test_functionsWorkAfterUnpause() public {
+        // Pause the contract
+        flareVtpm.pause();
+
+        // Unpause the contract
+        flareVtpm.unpause();
+
+        // Verify that verifyAndAttest works after unpausing
+        bool success = flareVtpm.verifyAndAttest(HEADER, PAYLOAD, SIGNATURE);
+        assertTrue(success, "Verification and attestation should work after unpausing");
+
+        // Verify that setBaseQuoteConfig works after unpausing
+        flareVtpm.setBaseQuoteConfig(HWMODEL, SWNAME, IMAGEDIGEST, ISS, SECBOOT);
+
+        // Verify that setTokenTypeVerifier works after unpausing
+        flareVtpm.setTokenTypeVerifier(address(oidcVerifier));
+    }
+
+    /**
+     * @dev Tests that only the owner can pause the contract.
+     */
+    function test_onlyOwnerCanPause() public {
+        // Switch to a non-owner account
+        vm.startPrank(address(0x123));
+
+        // Expect the function to revert with OwnableUnauthorizedAccount error
+        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", address(0x123)));
+
+        // Attempt to pause the contract as non-owner
+        flareVtpm.pause();
+
+        vm.stopPrank();
+    }
+
+    /**
+     * @dev Tests that only the owner can unpause the contract.
+     */
+    function test_onlyOwnerCanUnpause() public {
+        // First pause the contract as the owner
+        flareVtpm.pause();
+
+        // Switch to a non-owner account
+        vm.startPrank(address(0x123));
+
+        // Expect the function to revert with OwnableUnauthorizedAccount error
+        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", address(0x123)));
+
+        // Attempt to unpause the contract as non-owner
+        flareVtpm.unpause();
+
+        vm.stopPrank();
+    }
 }
