@@ -10,6 +10,7 @@ import {OidcSignatureVerification} from "../contracts/verifiers/OidcSignatureVer
 import {
     Header, PayloadValidationFailed, QuoteConfig, SignatureVerificationFailed
 } from "../contracts/types/Common.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title FlareVtpmAttestationTest
@@ -254,5 +255,165 @@ contract FlareVtpmAttestationTest is Test {
             }
         }
         return type(uint256).max;
+    }
+
+    /**
+     * @dev Tests that only the owner can pause the contract.
+     */
+    function test_pause_OnlyOwner() public {
+        // Attempt to pause as a non-owner
+        vm.prank(address(0x123));
+        vm.expectRevert();
+        flareVtpm.pause();
+
+        // Verify the contract is not paused
+        assertFalse(flareVtpm.paused(), "Contract should not be paused");
+
+        // Pause as the owner (msg.sender is the owner in tests)
+        flareVtpm.pause();
+
+        // Verify the contract is paused
+        assertTrue(flareVtpm.paused(), "Contract should be paused");
+    }
+
+    /**
+     * @dev Tests that only the owner can unpause the contract.
+     */
+    function test_unpause_OnlyOwner() public {
+        // First pause the contract
+        flareVtpm.pause();
+        assertTrue(flareVtpm.paused(), "Contract should be paused");
+
+        // Attempt to unpause as a non-owner
+        vm.prank(address(0x123));
+        vm.expectRevert();
+        flareVtpm.unpause();
+
+        // Verify the contract is still paused
+        assertTrue(flareVtpm.paused(), "Contract should still be paused");
+
+        // Unpause as the owner
+        flareVtpm.unpause();
+
+        // Verify the contract is not paused
+        assertFalse(flareVtpm.paused(), "Contract should not be paused");
+    }
+
+    /**
+     * @dev Tests that verifyAndAttest fails when the contract is paused.
+     */
+    function test_verifyAndAttest_WhenPaused() public {
+        // Pause the contract
+        flareVtpm.pause();
+
+        // Expect the function to revert with Pausable error
+        vm.expectRevert(abi.encodeWithSelector(Pausable.EnforcedPause.selector));
+
+        // Attempt to perform verification and attestation
+        flareVtpm.verifyAndAttest(HEADER, PAYLOAD, SIGNATURE);
+    }
+
+    /**
+     * @dev Tests that verifyAndAttest works when the contract is unpaused.
+     */
+    function test_verifyAndAttest_WhenUnpaused() public {
+        // Pause and then unpause the contract
+        flareVtpm.pause();
+        flareVtpm.unpause();
+
+        // Verify that the function works normally
+        bool success = flareVtpm.verifyAndAttest(HEADER, PAYLOAD, SIGNATURE);
+        assertTrue(success, "Verification and attestation should succeed when unpaused");
+    }
+
+    /**
+     * @dev Tests that setBaseQuoteConfig fails when the contract is paused.
+     */
+    function test_setBaseQuoteConfig_WhenPaused() public {
+        // Pause the contract
+        flareVtpm.pause();
+
+        // Expect the function to revert with Pausable error
+        vm.expectRevert(abi.encodeWithSelector(Pausable.EnforcedPause.selector));
+
+        // Attempt to set base quote config
+        flareVtpm.setBaseQuoteConfig("newmodel", "newname", "newdigest", "newiss", false);
+    }
+
+    /**
+     * @dev Tests that setBaseQuoteConfig works when the contract is unpaused.
+     */
+    function test_setBaseQuoteConfig_WhenUnpaused() public {
+        // Pause and then unpause the contract
+        flareVtpm.pause();
+        flareVtpm.unpause();
+
+        // Verify that the function works normally
+        flareVtpm.setBaseQuoteConfig("newmodel", "newname", "newdigest", "newiss", false);
+    }
+
+    /**
+     * @dev Tests that setTokenTypeVerifier fails when the contract is paused.
+     */
+    function test_setTokenTypeVerifier_WhenPaused() public {
+        // Deploy a new verifier
+        OidcSignatureVerification newVerifier = new OidcSignatureVerification();
+
+        // Pause the contract
+        flareVtpm.pause();
+
+        // Expect the function to revert with Pausable error
+        vm.expectRevert(abi.encodeWithSelector(Pausable.EnforcedPause.selector));
+
+        // Attempt to set token type verifier
+        flareVtpm.setTokenTypeVerifier(address(newVerifier));
+    }
+
+    /**
+     * @dev Tests that setTokenTypeVerifier works when the contract is unpaused.
+     */
+    function test_setTokenTypeVerifier_WhenUnpaused() public {
+        // Deploy a new verifier
+        OidcSignatureVerification newVerifier = new OidcSignatureVerification();
+
+        // Pause and then unpause the contract
+        flareVtpm.pause();
+        flareVtpm.unpause();
+
+        // Verify that the function works normally
+        flareVtpm.setTokenTypeVerifier(address(newVerifier));
+    }
+
+    /**
+     * @dev Tests that view functions still work when the contract is paused.
+     */
+    function test_viewFunctions_WhenPaused() public {
+        // First register a quote
+        flareVtpm.verifyAndAttest(HEADER, PAYLOAD, SIGNATURE);
+
+        // Pause the contract
+        flareVtpm.pause();
+
+        // Verify that view functions still work
+        QuoteConfig memory registeredConfig = flareVtpm.getRegisteredQuote(address(this));
+        assertEq(registeredConfig.exp, EXP, "View function should work when paused");
+
+        // Check paused status
+        assertTrue(flareVtpm.paused(), "Contract should be paused");
+    }
+
+    /**
+     * @dev Tests the pause and unpause events are emitted correctly.
+     */
+    function test_pauseUnpause_Events() public {
+        // Check pause event
+        vm.expectEmit(true, true, true, true);
+        emit Pausable.Paused(address(this));
+        flareVtpm.pause();
+
+        // Check unpause event
+        vm.expectEmit(true, true, true, true);
+        emit Pausable.Unpaused(address(this));
+        flareVtpm.unpause();
     }
 }

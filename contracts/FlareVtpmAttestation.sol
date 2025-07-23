@@ -7,13 +7,14 @@ import {BaseQuoteConfig, Header, QuoteConfig} from "./types/Common.sol";
 import {InvalidVerifier, PayloadValidationFailed, SignatureVerificationFailed} from "./types/Common.sol";
 import {ParserUtils} from "./utils/ParserUtils.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title FlareVtpmAttestation
  * @dev A contract for verifying RSA-signed JWTs and registering virtual Trusted Platform Module (vTPM) attestations.
  * Allows for configuring required vTPM specifications and validating token-based attestations.
  */
-contract FlareVtpmAttestation is IAttestation, Ownable {
+contract FlareVtpmAttestation is IAttestation, Ownable, Pausable {
     /// @notice Stores the vTPM configurations for each registered address
     mapping(address => QuoteConfig) public registeredQuotes;
 
@@ -35,10 +36,26 @@ contract FlareVtpmAttestation is IAttestation, Ownable {
     constructor() Ownable(msg.sender) {}
 
     /**
+     * @dev Pauses the contract, disabling state-changing functions.
+     * Can only be called by the contract owner.
+     */
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /**
+     * @dev Unpauses the contract, re-enabling state-changing functions.
+     * Can only be called by the contract owner.
+     */
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
+    /**
      * @dev Assigns a verifier contract to handle a specific token type.
      * @param verifier Address of the contract implementing the IVerification interface for this token type.
      */
-    function setTokenTypeVerifier(address verifier) external onlyOwner {
+    function setTokenTypeVerifier(address verifier) external onlyOwner whenNotPaused {
         IVerification tokenTypeVerifier = IVerification(verifier);
         bytes memory tokenType = tokenTypeVerifier.tokenType();
         if (tokenType.length == 0) {
@@ -71,7 +88,7 @@ contract FlareVtpmAttestation is IAttestation, Ownable {
         string calldata imageDigest,
         string calldata iss,
         bool secboot
-    ) external onlyOwner {
+    ) external onlyOwner whenNotPaused {
         requiredConfig = BaseQuoteConfig({
             hwmodel: bytes(hwmodel),
             swname: bytes(swname),
@@ -93,6 +110,7 @@ contract FlareVtpmAttestation is IAttestation, Ownable {
      */
     function verifyAndAttest(bytes calldata header, bytes calldata payload, bytes calldata signature)
         external
+        whenNotPaused
         returns (bool success)
     {
         // Parse the JWT header to obtain the token type
