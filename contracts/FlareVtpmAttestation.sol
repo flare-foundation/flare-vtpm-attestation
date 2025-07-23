@@ -7,13 +7,15 @@ import {BaseQuoteConfig, Header, QuoteConfig} from "./types/Common.sol";
 import {InvalidVerifier, PayloadValidationFailed, SignatureVerificationFailed} from "./types/Common.sol";
 import {ParserUtils} from "./utils/ParserUtils.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 /**
  * @title FlareVtpmAttestation
  * @dev A contract for verifying RSA-signed JWTs and registering virtual Trusted Platform Module (vTPM) attestations.
  * Allows for configuring required vTPM specifications and validating token-based attestations.
  */
-contract FlareVtpmAttestation is IAttestation, Ownable {
+contract FlareVtpmAttestation is IAttestation, Initializable, Ownable, UUPSUpgradeable {
     /// @notice Stores the vTPM configurations for each registered address
     mapping(address => QuoteConfig) public registeredQuotes;
 
@@ -30,9 +32,51 @@ contract FlareVtpmAttestation is IAttestation, Ownable {
     mapping(bytes => IVerification) public tokenTypeVerifiers;
 
     /**
-     * @dev Initializes the contract, setting the deployer as the initial owner.
+     * @dev Constructor required by Ownable but disabled for upgradeable contracts
      */
-    constructor() Ownable(msg.sender) {}
+    constructor() Ownable(msg.sender) {
+        _disableInitializers();
+    }
+
+    /**
+     * @dev Initializes the contract, setting the deployer as the initial owner.
+     * This replaces the constructor for upgradeable contracts.
+     * @param initialOwner The address that will be set as the contract owner
+     */
+    function initialize(address initialOwner) public initializer {
+        _transferOwnership(initialOwner);
+    }
+
+    /**
+     * @dev Initializes the contract with owner and base configuration.
+     * This is a convenience function for deployment with initial configuration.
+     * @param initialOwner The address that will be set as the contract owner
+     * @param hwmodel Hardware model of the device
+     * @param swname Software name or OS associated with the vTPM
+     * @param imageDigest Digest of the image used for verification
+     * @param iss The issuer string for the vTPM
+     * @param secboot Boolean indicating whether secure boot is required
+     */
+    function initializeWithConfig(
+        address initialOwner,
+        string calldata hwmodel,
+        string calldata swname,
+        string calldata imageDigest,
+        string calldata iss,
+        bool secboot
+    ) public initializer {
+        _transferOwnership(initialOwner);
+        
+        requiredConfig = BaseQuoteConfig({
+            hwmodel: bytes(hwmodel),
+            swname: bytes(swname),
+            imageDigest: bytes(imageDigest),
+            iss: bytes(iss),
+            secboot: secboot
+        });
+
+        emit BaseQuoteConfigUpdated(imageDigest, hwmodel, swname, iss, secboot);
+    }
 
     /**
      * @dev Assigns a verifier contract to handle a specific token type.
@@ -84,6 +128,21 @@ contract FlareVtpmAttestation is IAttestation, Ownable {
     }
 
     /**
+     * @dev Authorizes an upgrade to a new implementation.
+     * Only the contract owner can authorize upgrades.
+     * @param newImplementation Address of the new implementation contract
+     */
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+
+    /**
+     * @dev Returns the current implementation version.
+     * @return Version string for this implementation
+     */
+    function version() public pure virtual returns (string memory) {
+        return "1.0.0";
+    }
+
+    /**
      * @dev Verifies a JWT-based attestation and, if valid, registers the token for the caller.
      * Uses the `tokenTypeVerifiers` to validate the signature and payload against the expected configuration.
      * @param header JWT header as a Base64URL-decoded byte array.
@@ -93,6 +152,7 @@ contract FlareVtpmAttestation is IAttestation, Ownable {
      */
     function verifyAndAttest(bytes calldata header, bytes calldata payload, bytes calldata signature)
         external
+        virtual
         returns (bool success)
     {
         // Parse the JWT header to obtain the token type

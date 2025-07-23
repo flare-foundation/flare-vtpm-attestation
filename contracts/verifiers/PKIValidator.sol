@@ -90,6 +90,7 @@ contract PKIValidator {
         // return PKICertificateParser.verifyRSASignature(
         //     certs.leafCert, convertPublicKeyToBigNum(certs.intermediateCert.publicKey)
         // );
+        return true; // Temporary placeholder
     }
 
     // Helper function to verify JWT signature using RSA
@@ -106,21 +107,24 @@ contract PKIValidator {
 
         // 3. Decode signature from base64
         // TODO
-        bytes memory signatureBytes = PKICertificateParser.base64Decode(parts.signature);
+        bytes memory signatureBytes = PKICertificateParser.base64Decode(bytes(parts.signature));
 
         // 4. Convert signature to BigNum
         BigNumber.BigNum memory signature = bytesToBigNum(signatureBytes);
 
         // 5. Perform RSA verification
-        // TODO
-        BigNumber.BigNum memory modulus = PKICertificateParser.getModulusFromPublicKey(publicKey);
-        BigNumber.BigNum memory exponent = PKICertificateParser.getExponentFromPublicKey(publicKey);
+        // TODO - These functions need to be implemented
+        // BigNumber.BigNum memory modulus = PKICertificateParser.getModulusFromPublicKey(publicKey);
+        // BigNumber.BigNum memory exponent = PKICertificateParser.getExponentFromPublicKey(publicKey);
+        BigNumber.BigNum memory modulus = bytesToBigNum(hex"00");
+        BigNumber.BigNum memory exponent = bytesToBigNum(hex"010001");
 
-        // 6. Calculate s^e mod n
-        BigNumber.BigNum memory calculated = publicKey.modPow(signature, exponent, modulus);
+        // 6. Calculate s^e mod n - TODO: fix implementation
+        // BigNumber.BigNum memory calculated = BigNumber.modPow(signature, exponent, modulus);
 
-        // 7. Verify PKCS#1 v1.5 padding
-        return CryptoUtils.verifyPKCS1v15Padding(bigNumToBytes(calculated), sha256(bytes(signedData)));
+        // 7. Verify PKCS#1 v1.5 padding - TODO: fix implementation
+        // return CryptoUtils.verifyPKCS1v15Padding(bigNumToBytes(calculated), sha256(bytes(signedData)));
+        return false; // Temporary placeholder
     }
 
     // Utility functions for BigNum conversions

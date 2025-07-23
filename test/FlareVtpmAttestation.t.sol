@@ -6,6 +6,7 @@ import {console} from "forge-std/console.sol";
 
 import {FlareVtpmAttestation} from "../contracts/FlareVtpmAttestation.sol";
 import {OidcSignatureVerification} from "../contracts/verifiers/OidcSignatureVerification.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 import {
     Header, PayloadValidationFailed, QuoteConfig, SignatureVerificationFailed
@@ -16,9 +17,13 @@ import {
  * @dev Test suite for the FlareVtpmAttestation contract.
  */
 contract FlareVtpmAttestationTest is Test {
-    /// @notice Instance of the contract to be tested
+    /// @notice Instance of the proxy contracts to be tested
     FlareVtpmAttestation public flareVtpm;
     OidcSignatureVerification public oidcVerifier;
+    
+    /// @notice Implementation contracts
+    FlareVtpmAttestation public flareVtpmImpl;
+    OidcSignatureVerification public oidcVerifierImpl;
 
     // Example attestation token components for testing (Base64URL decoded)
     bytes constant HEADER =
@@ -49,18 +54,36 @@ contract FlareVtpmAttestationTest is Test {
     bool constant SECBOOT = true;
 
     /**
-     * @dev Sets up the test environment by deploying the FlareVtpmAttestation contract
-     * and initializing it with test data.
+     * @dev Sets up the test environment by deploying proxy contracts
+     * and initializing them with test data.
      */
     function setUp() public {
-        // Deploy the FlareVtpmAttestation contract
-        flareVtpm = new FlareVtpmAttestation();
+        // Deploy implementation contracts
+        flareVtpmImpl = new FlareVtpmAttestation();
+        oidcVerifierImpl = new OidcSignatureVerification();
 
-        // Set the required vTPM configuration in the contract
-        flareVtpm.setBaseQuoteConfig(HWMODEL, SWNAME, IMAGEDIGEST, ISS, SECBOOT);
+        // Deploy OIDC verifier proxy
+        bytes memory oidcInitData = abi.encodeWithSelector(
+            OidcSignatureVerification.initialize.selector,
+            address(this)
+        );
+        ERC1967Proxy oidcProxy = new ERC1967Proxy(address(oidcVerifierImpl), oidcInitData);
+        oidcVerifier = OidcSignatureVerification(address(oidcProxy));
 
-        // Deploy the OIDC signature verifier and register it with the contract
-        oidcVerifier = new OidcSignatureVerification();
+        // Deploy FlareVtpmAttestation proxy with configuration
+        bytes memory flareInitData = abi.encodeWithSelector(
+            FlareVtpmAttestation.initializeWithConfig.selector,
+            address(this),
+            HWMODEL,
+            SWNAME,
+            IMAGEDIGEST,
+            ISS,
+            SECBOOT
+        );
+        ERC1967Proxy flareProxy = new ERC1967Proxy(address(flareVtpmImpl), flareInitData);
+        flareVtpm = FlareVtpmAttestation(address(flareProxy));
+
+        // Set up verifier relationship
         flareVtpm.setTokenTypeVerifier(address(oidcVerifier));
 
         // Add the RSA public key to the verifier's key registry
