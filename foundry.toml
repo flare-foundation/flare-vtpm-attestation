@@ -8,6 +8,10 @@ optimizer = true
 optimizer_runs = 200
 block_gas_limit = 15000000
 verbosity=2
+ffi = true
+ast = true
+build_info = true
+extra_output = ["storageLayout"]
 
 [rpc_endpoints]
 flare = "${FLARE_RPC_URL}"

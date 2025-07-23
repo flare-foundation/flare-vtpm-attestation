@@ -6,14 +6,16 @@ import {IVerification} from "./interfaces/IVerification.sol";
 import {BaseQuoteConfig, Header, QuoteConfig} from "./types/Common.sol";
 import {InvalidVerifier, PayloadValidationFailed, SignatureVerificationFailed} from "./types/Common.sol";
 import {ParserUtils} from "./utils/ParserUtils.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 /**
  * @title FlareVtpmAttestation
  * @dev A contract for verifying RSA-signed JWTs and registering virtual Trusted Platform Module (vTPM) attestations.
  * Allows for configuring required vTPM specifications and validating token-based attestations.
  */
-contract FlareVtpmAttestation is IAttestation, Ownable {
+contract FlareVtpmAttestation is IAttestation, Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @notice Stores the vTPM configurations for each registered address
     mapping(address => QuoteConfig) public registeredQuotes;
 
@@ -30,9 +32,42 @@ contract FlareVtpmAttestation is IAttestation, Ownable {
     mapping(bytes => IVerification) public tokenTypeVerifiers;
 
     /**
-     * @dev Initializes the contract, setting the deployer as the initial owner.
+     * @dev Disables initializers to prevent the implementation contract from being initialized.
+     * @custom:oz-upgrades-unsafe-allow constructor
      */
-    constructor() Ownable(msg.sender) {}
+    constructor() {
+        _disableInitializers();
+    }
+
+    /**
+     * @dev Initializes the contract, setting the initial owner and base configuration.
+     * @param initialOwner The address that will be set as the initial owner.
+     * @param hwmodel Hardware model of the device.
+     * @param swname Software name or OS associated with the vTPM.
+     * @param imageDigest Digest of the image used for verification.
+     * @param iss The issuer string for the vTPM.
+     * @param secboot Boolean indicating whether secure boot is required.
+     */
+    function initialize(
+        address initialOwner,
+        string calldata hwmodel,
+        string calldata swname,
+        string calldata imageDigest,
+        string calldata iss,
+        bool secboot
+    ) external initializer {
+        __Ownable_init(initialOwner);
+        __UUPSUpgradeable_init();
+        
+        // Set initial base configuration
+        requiredConfig = BaseQuoteConfig({
+            hwmodel: bytes(hwmodel),
+            swname: bytes(swname),
+            imageDigest: bytes(imageDigest),
+            iss: bytes(iss),
+            secboot: secboot
+        });
+    }
 
     /**
      * @dev Assigns a verifier contract to handle a specific token type.
@@ -187,4 +222,10 @@ contract FlareVtpmAttestation is IAttestation, Ownable {
             revert PayloadValidationFailed("Invalid image digest");
         }
     }
+
+    /**
+     * @dev Authorizes contract upgrades. Only the owner can authorize upgrades.
+     * @param newImplementation Address of the new implementation contract.
+     */
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 }

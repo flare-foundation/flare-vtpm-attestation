@@ -3,7 +3,9 @@ pragma solidity ^0.8.27;
 
 import {SignatureVerificationFailed} from "../types/Common.sol";
 import {Header, RSAPubKey} from "../types/OidcStructs.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 import {RSA} from "@openzeppelin/contracts/utils/cryptography/RSA.sol";
 
@@ -12,7 +14,7 @@ import {RSA} from "@openzeppelin/contracts/utils/cryptography/RSA.sol";
  * @dev Contract for managing and verifying RSA public keys associated with OIDC (OpenID Connect) JWT signatures.
  * Allows adding, removing, and verifying RSA public keys by `kid` (Key ID).
  */
-contract OidcSignatureVerification is Ownable {
+contract OidcSignatureVerification is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @notice Event emitted when a new OIDC RSA public key is added
     /// @param kid Key ID associated with the RSA public key
     /// @param e The exponent of the RSA public key
@@ -28,9 +30,21 @@ contract OidcSignatureVerification is Ownable {
     mapping(bytes kid => RSAPubKey) internal pubKeys;
 
     /**
-     * @dev Constructor that initializes the contract with the deployer as the initial owner.
+     * @dev Disables initializers to prevent the implementation contract from being initialized.
+     * @custom:oz-upgrades-unsafe-allow constructor
      */
-    constructor() Ownable(msg.sender) {}
+    constructor() {
+        _disableInitializers();
+    }
+
+    /**
+     * @dev Initializes the contract, setting the initial owner.
+     * @param initialOwner The address that will be set as the initial owner.
+     */
+    function initialize(address initialOwner) external initializer {
+        __Ownable_init(initialOwner);
+        __UUPSUpgradeable_init();
+    }
 
     /**
      * @dev Returns the token type handled by this verifier, which is `"OIDC"`.
@@ -107,4 +121,10 @@ contract OidcSignatureVerification is Ownable {
         // Verify the RSA signature using the RSA public key
         verified = RSA.pkcs1Sha256(digest, rawSignature, rsaPublicKey.e, rsaPublicKey.n);
     }
+
+    /**
+     * @dev Authorizes contract upgrades. Only the owner can authorize upgrades.
+     * @param newImplementation Address of the new implementation contract.
+     */
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 }
