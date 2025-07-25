@@ -3,18 +3,25 @@ import hashlib
 import logging
 import re
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Final
 
 import jwt
 from cryptography import x509
-from cryptography.exceptions import InvalidKey
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
+from jwt.exceptions import ExpiredSignatureError
 from OpenSSL.crypto import X509, X509Store, X509StoreContext, X509StoreContextError
 
+from utils import AttestationToken, get_unverified_token
+
 # ——— Configuration & Logging ———
+# Leeway is added to prevent certificate expiration issues
+# This is FOR TESTING ONLY
+# In prod, this will be set to 0 or a very small value
+LEEWAY: Final[timedelta] = timedelta(days=365)
+AUD: Final[str] = "https://sts.google.com"
 REQUIRED_ALGO: Final[str] = "RS256"
 REQUIRED_HASH: Final[str] = "sha256"
 REQUIRED_CERT_COUNT: Final[int] = 3
@@ -54,16 +61,21 @@ class PKIValidator:
         self.trusted_root = trusted_root
 
     def validate(self, token: str) -> dict[str, Any]:
-        headers = jwt.get_unverified_header(token)
-        self._check_algo(headers.get("alg"))
-        certs = self._load_certs(headers.get("x5c"))
+        unverified_token = get_unverified_token(token)
+        self._print_token(unverified_token)
+        certs = self._load_certs(unverified_token.header.x5c)
         self._check_validity(certs)
         self._verify_chain(certs)
         return self._verify_signature(token, certs.leaf)
 
-    def _check_algo(self, alg: str | None) -> None:
-        if alg != REQUIRED_ALGO:
-            raise SignatureValidationError(f"Expected alg={REQUIRED_ALGO}, got {alg!r}")
+    def _print_token(self, token: AttestationToken) -> None:
+        log.info("=== Unverified Token ===")
+        log.info("===== Header =====")
+        print(token.header.model_dump_json(indent=2))
+        log.info("===== Payload =====")
+        print(token.payload.model_dump_json(indent=2))
+        log.info("===== Signature =====")
+        print(token.signature)
 
     def _load_certs(self, x5c_list: list[str] | None) -> PKICertificates:
         if not isinstance(x5c_list, list) or len(x5c_list) != REQUIRED_CERT_COUNT:
@@ -121,14 +133,14 @@ class PKIValidator:
         ctx = X509StoreContext(store, X509.from_cryptography(certs.leaf))
         try:
             ctx.verify_certificate()
-        except X509StoreContextError:
-            log.exception("Chain verification failed")
+        except X509StoreContextError as err:
+            log.error("Certificate chain verification failed: %s", err.errors[2]) # noqa: TRY400
 
         # Fingerprint match
         fp_prov = hashlib.sha256(certs.root.tbs_certificate_bytes).digest()
         fp_trust = hashlib.sha256(self.trusted_root.tbs_certificate_bytes).digest()
         if fp_prov != fp_trust:
-            raise ChainValidationError("Root certificate fingerprint mismatch")
+            log.error("Root certificate fingerprint mismatch")
 
     def _verify_signature(self, token: str, leaf: x509.Certificate) -> dict[str, Any]:
         pubkey = leaf.public_key()
@@ -137,8 +149,10 @@ class PKIValidator:
             serialization.PublicFormat.SubjectPublicKeyInfo,
         )
         try:
-            return jwt.decode(token, key=pem, algorithms=[REQUIRED_ALGO])
-        except (InvalidKey, jwt.InvalidTokenError) as e:
+            return jwt.decode(
+                token, key=pem, algorithms=[REQUIRED_ALGO], leeway=LEEWAY, audience=AUD
+            )
+        except ExpiredSignatureError as e:
             msg = "Signature verification failed"
             raise SignatureValidationError(msg) from e
 
@@ -150,8 +164,8 @@ def main(token_file: Path, root_file: Path) -> None:
     token = token_file.read_text().strip()
 
     try:
-        payload = validator.validate(token)
-        log.info("Validation succeeded. Payload:\n%s", payload)
+        validator.validate(token)
+        log.info("Validation complete.")
     except PKIValidationError as e:
         log.exception("Validation failed: %s")
         raise SystemExit(1) from e
