@@ -6,6 +6,7 @@ import {IVerification} from "./interfaces/IVerification.sol";
 import {BaseQuoteConfig, Header, QuoteConfig} from "./types/Common.sol";
 import {InvalidVerifier, PayloadValidationFailed, SignatureVerificationFailed} from "./types/Common.sol";
 import {ParserUtils} from "./utils/ParserUtils.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -15,7 +16,7 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
  * @dev A contract for verifying RSA-signed JWTs and registering virtual Trusted Platform Module (vTPM) attestations.
  * Allows for configuring required vTPM specifications and validating token-based attestations.
  */
-contract FlareVtpmAttestation is IAttestation, Initializable, OwnableUpgradeable, UUPSUpgradeable {
+contract FlareVtpmAttestation is IAttestation, Initializable, OwnableUpgradeable, UUPSUpgradeable, Pausable {
     /// @notice Stores the vTPM configurations for each registered address
     mapping(address => QuoteConfig) public registeredQuotes;
 
@@ -73,7 +74,7 @@ contract FlareVtpmAttestation is IAttestation, Initializable, OwnableUpgradeable
      * @dev Assigns a verifier contract to handle a specific token type.
      * @param verifier Address of the contract implementing the IVerification interface for this token type.
      */
-    function setTokenTypeVerifier(address verifier) external onlyOwner {
+    function setTokenTypeVerifier(address verifier) external onlyOwner whenNotPaused {
         IVerification tokenTypeVerifier = IVerification(verifier);
         bytes memory tokenType = tokenTypeVerifier.tokenType();
         if (tokenType.length == 0) {
@@ -106,7 +107,7 @@ contract FlareVtpmAttestation is IAttestation, Initializable, OwnableUpgradeable
         string calldata imageDigest,
         string calldata iss,
         bool secboot
-    ) external onlyOwner {
+    ) external onlyOwner whenNotPaused {
         requiredConfig = BaseQuoteConfig({
             hwmodel: bytes(hwmodel),
             swname: bytes(swname),
@@ -128,6 +129,7 @@ contract FlareVtpmAttestation is IAttestation, Initializable, OwnableUpgradeable
      */
     function verifyAndAttest(bytes calldata header, bytes calldata payload, bytes calldata signature)
         external
+        whenNotPaused
         returns (bool success)
     {
         // Parse the JWT header to obtain the token type
@@ -221,6 +223,22 @@ contract FlareVtpmAttestation is IAttestation, Initializable, OwnableUpgradeable
         if (keccak256(config.base.imageDigest) != keccak256(requiredConfig.imageDigest)) {
             revert PayloadValidationFailed("Invalid image digest");
         }
+    }
+
+    /**
+     * @dev Pauses the contract
+     * Only the contract owner can pause the contract
+     */
+    function pause() public onlyOwner {
+        _pause();
+    }
+
+    /**
+     * @dev Unpauses the contract
+     * Only the contract owner can unpause the contract
+     */
+    function unpause() public onlyOwner {
+        _unpause();
     }
 
     /**

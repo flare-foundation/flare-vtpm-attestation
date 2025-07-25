@@ -202,6 +202,46 @@ contract FlareVtpmAttestationTest is Test {
         flareVtpm.verifyAndAttest(HEADER, modifiedPayload, SIGNATURE);
     }
 
+    function test_pauseAndUnpauseByOwner() public {
+        // Test initial state
+        assertFalse(flareVtpm.paused(), "Contract should start unpaused");
+
+        // Test pause
+        flareVtpm.pause();
+        assertTrue(flareVtpm.paused(), "Contract should be paused");
+
+        // Test unpause
+        flareVtpm.unpause();
+        assertFalse(flareVtpm.paused(), "Contract should be unpaused");
+    }
+
+    function test_pauseAndUnpauseByNonOwner() public {
+        address nonOwner = makeAddr("nonOwner");
+
+        // Test pause by non-owner fails
+        vm.prank(nonOwner);
+        vm.expectRevert("Ownable: caller is not the owner");
+        flareVtpm.pause();
+
+        // First pause as owner to test unpause
+        flareVtpm.pause();
+
+        // Test unpause by non-owner fails
+        vm.prank(nonOwner);
+        vm.expectRevert("Ownable: caller is not the owner");
+        flareVtpm.unpause();
+    }
+
+    function test_writeAction_RevertWhenPaused() public {
+        // Ensure function works when not paused first
+        flareVtpm.verifyAndAttest(HEADER, PAYLOAD, SIGNATURE); // Should succeed
+
+        // Now pause and test revert
+        flareVtpm.pause();
+        vm.expectRevert("Pausable: paused");
+        flareVtpm.verifyAndAttest(HEADER, PAYLOAD, SIGNATURE);
+    }
+
     /**
      * @dev Utility function to replace a value in the payload for testing purposes.
      * @param payload The original payload bytes.
