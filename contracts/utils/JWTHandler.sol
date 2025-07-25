@@ -78,7 +78,7 @@ library JWTHandler {
         return verifyRS256Signature(bytes(signedData), signatureBytes, publicKey);
     }
 
-    function parseJWTHeader(bytes memory jsonHeader) internal pure returns (JWTHeaders memory) {
+    function parseJWTHeader(bytes memory /* jsonHeader */) internal pure returns (JWTHeaders memory) {
         // TODO: This is a simplified JSON parser
         // In reality, you'd need a proper JSON parser implementation
 
@@ -95,7 +95,7 @@ library JWTHandler {
     }
 
     // Cryptographic utility functions
-    function verifyRS256Signature(bytes memory message, bytes memory signature, bytes memory publicKey)
+    function verifyRS256Signature(bytes memory /* message */, bytes memory /* signature */, bytes memory /* publicKey */)
         internal
         pure
         returns (bool)
