@@ -107,7 +107,6 @@ The `py/` directory contains sample validation scripts for attestation tokens.
 2. Validate example attestation tokens stored in `py/data/`:
    ```bash
    uv run pki_attestation_validation.py
-   uv run oidc_attestation_validation.py
    ```
 
-**Note:** Tokens in `py/data/` may expire and fail validation.
+**Note:** Tokens in `py/data/` may expire and fail validation. This can be suppresses by modifying the `LEEWAY` parameter.
