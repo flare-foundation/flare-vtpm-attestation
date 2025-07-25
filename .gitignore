@@ -14,3 +14,4 @@ docs/
 .env
 .gas-snapshot
 .DS_Store
+node_modules/

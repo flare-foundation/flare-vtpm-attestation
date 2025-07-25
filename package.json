@@ -1,0 +1,44 @@
+{
+  "name": "flare-vtpm-attestation",
+  "version": "1.0.0",
+  "description": "Flare vTPM Attestation - PKI-based JWT attestation validator for secure on-chain verification",
+  "main": "index.js",
+  "scripts": {
+    "build": "forge build || ~/.foundry/bin/forge build",
+    "test": "forge test || ~/.foundry/bin/forge test",
+    "test:verbose": "forge test -vvv || ~/.foundry/bin/forge test -vvv",
+    "clean": "forge clean || ~/.foundry/bin/forge clean",
+    "install": "forge install || ~/.foundry/bin/forge install",
+    "slither": "slither .",
+    "lint": "solhint 'contracts/**/*.sol'",
+    "format": "prettier --write 'contracts/**/*.sol'"
+  },
+  "keywords": [
+    "solidity",
+    "ethereum",
+    "attestation",
+    "pki",
+    "jwt",
+    "vtpm",
+    "flare",
+    "smart-contracts"
+  ],
+  "author": "Flare vTPM Attestation Team",
+  "license": "MIT",
+  "devDependencies": {
+    "prettier": "^3.0.0",
+    "prettier-plugin-solidity": "^1.1.3",
+    "solhint": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/big14way/flare-vtpm-attestation.git"
+  },
+  "bugs": {
+    "url": "https://github.com/big14way/flare-vtpm-attestation/issues"
+  },
+  "homepage": "https://github.com/big14way/flare-vtpm-attestation#readme"
+}

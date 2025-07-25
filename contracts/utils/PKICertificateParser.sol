@@ -198,11 +198,11 @@ library PKICertificateParser {
         return slice(derBytes, derBytes.length - 64, 64); // Example: last 64 bytes
     }
 
-    function verifySignature(Certificate memory, /* cert */ bytes memory /* issuerPublicKey  */ )
-        internal
-        pure
-        returns (bool)
-    {
+    function verifySignature(
+        Certificate memory,
+        /* cert */
+        bytes memory /* issuerPublicKey  */
+    ) internal pure returns (bool) {
         // Would need proper RSA signature verification
         // TODO: This is a placeholder that always returns true
         return true;

@@ -10,9 +10,18 @@ on:
 jobs:
   analyze:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
 
       - name: Run Slither
         uses: crytic/slither-action@v0.4.0
@@ -23,12 +32,28 @@ jobs:
 
       - name: Create/update checklist as PR comment
         uses: actions/github-script@v7
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork
         env:
           REPORT: ${{ steps.slither.outputs.stdout }}
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const script = require('.github/scripts/slither_comment')
-            const header = '# Slither report'
-            const body = process.env.REPORT
-            await script({ github, context, header, body })
+            try {
+              const script = require('.github/scripts/slither_comment')
+              const header = '# Slither report'
+              const body = process.env.REPORT
+              await script({ github, context, header, body })
+            } catch (error) {
+              console.log('Unable to post comment (likely due to permissions):', error.message)
+              console.log('Slither report:')
+              console.log(process.env.REPORT)
+            }
+      
+      - name: Log Slither report for forks
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork
+        env:
+          REPORT: ${{ steps.slither.outputs.stdout }}
+        run: |
+          echo "Fork detected - unable to post PR comment due to security restrictions"
+          echo "Slither Analysis Report:"
+          echo "$REPORT"
