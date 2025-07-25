@@ -26,11 +26,11 @@ contract CryptoUtils {
         return sha256(data);
     }
 
-    function verifyRSASignature(bytes memory message, RSASignature memory signature, RSAPublicKey memory publicKey)
-        public
-        pure
-        returns (bool)
-    {
+    function verifyRSASignature(
+        bytes memory message,
+        RSASignature memory signature,
+        RSAPublicKey memory publicKey
+    ) public pure returns (bool) {
         // 1. Hash the message with SHA-256
         bytes32 messageHash = sha256(message);
 
@@ -43,14 +43,17 @@ contract CryptoUtils {
         return true;
     }
 
-    function rsaDecrypt(bytes memory /* ciphertext */, RSAPublicKey memory /* publicKey */) public pure returns (bytes memory) {
+    function rsaDecrypt(
+        bytes memory,
+        /* ciphertext */ RSAPublicKey memory /* publicKey */
+    ) public pure returns (bytes memory) {
         // TODO: This is a placeholder for RSA decryption
         // In reality, would need bignum arithmetic implementation
         // c^e mod n
 
         // Placeholder implementation - in real scenario would use actual parameters
         uint256 mockLength = 256; // Mock RSA key size in bytes
-        
+
         // Placeholder: returns mock result
         bytes memory result = new bytes(mockLength);
         return result;
@@ -118,11 +121,11 @@ contract CryptoUtils {
         return 0;
     }
 
-    function verifyHashInPadding(bytes memory data, uint256 paddingEnd, bytes32 expectedHash)
-        internal
-        pure
-        returns (bool)
-    {
+    function verifyHashInPadding(
+        bytes memory data,
+        uint256 paddingEnd,
+        bytes32 expectedHash
+    ) internal pure returns (bool) {
         // Get the DER encoded hash from the padding
         bytes memory derHash = derEncodeHash(expectedHash);
 
@@ -153,8 +156,9 @@ contract CryptoUtils {
 
         for (; i + 3 <= data.length; i += 3) {
             // Process 3 bytes at a time
-            uint256 value =
-                uint256(uint8(data[i])) << 16 | uint256(uint8(data[i + 1])) << 8 | uint256(uint8(data[i + 2]));
+            uint256 value = (uint256(uint8(data[i])) << 16) |
+                (uint256(uint8(data[i + 1])) << 8) |
+                uint256(uint8(data[i + 2]));
 
             // Convert to 4 base64 characters
             result[resultIndex++] = bytes(table)[uint8(value >> 18)];

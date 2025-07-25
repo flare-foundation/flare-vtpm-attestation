@@ -11,11 +11,11 @@ library ParserUtils {
      * @param delimiter The character that indicates the end of the value.
      * @return value The extracted value associated with the key, returned as a bytes array.
      */
-    function extractValue(bytes calldata data, string memory key, string memory delimiter)
-        internal
-        pure
-        returns (bytes memory value)
-    {
+    function extractValue(
+        bytes calldata data,
+        string memory key,
+        string memory delimiter
+    ) internal pure returns (bytes memory value) {
         bytes memory keyBytes = bytes(key);
         bytes memory delimiterBytes = bytes(delimiter);
 
@@ -95,8 +95,11 @@ library ParserUtils {
      */
     function parseBool(bytes memory boolBytes) internal pure returns (bool result) {
         if (
-            boolBytes.length == 4 // Length of 'true'
-                && boolBytes[0] == "t" && boolBytes[1] == "r" && boolBytes[2] == "u" && boolBytes[3] == "e"
+            boolBytes.length == 4 && // Length of 'true'
+            boolBytes[0] == "t" &&
+            boolBytes[1] == "r" &&
+            boolBytes[2] == "u" &&
+            boolBytes[3] == "e"
         ) {
             return true;
         }

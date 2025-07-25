@@ -46,7 +46,7 @@ library PKICertificateParser {
         Certificate memory rootCert = decodeAndParseCertificate(x5cHeaders[2]);
 
         // Return PKICertificates struct
-        return PKICertificates({leafCert: leafCert, intermediateCert: intermediateCert, rootCert: rootCert});
+        return PKICertificates({ leafCert: leafCert, intermediateCert: intermediateCert, rootCert: rootCert });
     }
 
     function decodeAndParseCertificate(string memory certificateStr) public view returns (Certificate memory) {
@@ -61,14 +61,15 @@ library PKICertificateParser {
         bytes memory publicKey = extractPublicKey(parsed.asn1Data);
         string memory sigAlg = extractSignatureAlgorithm(parsed.asn1Data);
 
-        return Certificate({
-            tbsCertificate: parsed.asn1Data,
-            signature: extractSignature(rawBytes),
-            notValidBefore: notValidBefore,
-            notValidAfter: notValidAfter,
-            publicKey: publicKey,
-            signatureAlgorithm: sigAlg
-        });
+        return
+            Certificate({
+                tbsCertificate: parsed.asn1Data,
+                signature: extractSignature(rawBytes),
+                notValidBefore: notValidBefore,
+                notValidAfter: notValidAfter,
+                publicKey: publicKey,
+                signatureAlgorithm: sigAlg
+            });
     }
 
     function isCertificateLifetimeInvalid(Certificate memory certificate) internal view returns (bool) {
@@ -134,12 +135,13 @@ library PKICertificateParser {
         uint256 length = uint256(uint8(derBytes[offset]));
         offset++;
 
-        return ParsedCertificate({
-            derBytes: derBytes,
-            asn1Data: slice(derBytes, offset, length),
-            version: 3, // X.509v3
-            serialNumber: extractSerialNumber(derBytes, offset)
-        });
+        return
+            ParsedCertificate({
+                derBytes: derBytes,
+                asn1Data: slice(derBytes, offset, length),
+                version: 3, // X.509v3
+                serialNumber: extractSerialNumber(derBytes, offset)
+            });
     }
 
     function extractSerialNumber(bytes memory derBytes, uint256 offset) internal pure returns (bytes memory) {
@@ -173,7 +175,7 @@ library PKICertificateParser {
         return serialNumber;
     }
 
-    function extractValidityPeriod(bytes memory /* asn1Data */ ) internal view returns (uint256, uint256) {
+    function extractValidityPeriod(bytes memory /* asn1Data */) internal view returns (uint256, uint256) {
         // Simplified validity period extraction
         // TODO: In real implementation, would need proper ASN.1 parsing
         return (
@@ -188,7 +190,7 @@ library PKICertificateParser {
         return slice(asn1Data, 0, 32); // Example: return first 32 bytes
     }
 
-    function extractSignatureAlgorithm(bytes memory /* asn1Data */ ) internal pure returns (string memory) {
+    function extractSignatureAlgorithm(bytes memory /* asn1Data */) internal pure returns (string memory) {
         // Simplified signature algorithm extraction
         return "sha256";
     }
@@ -198,11 +200,10 @@ library PKICertificateParser {
         return slice(derBytes, derBytes.length - 64, 64); // Example: last 64 bytes
     }
 
-    function verifySignature(Certificate memory, /* cert */ bytes memory /* issuerPublicKey  */ )
-        internal
-        pure
-        returns (bool)
-    {
+    function verifySignature(
+        Certificate memory,
+        /* cert */ bytes memory /* issuerPublicKey  */
+    ) internal pure returns (bool) {
         // Would need proper RSA signature verification
         // TODO: This is a placeholder that always returns true
         return true;

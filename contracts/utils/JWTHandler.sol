@@ -58,18 +58,19 @@ library JWTHandler {
             revert InvalidJWTFormat();
         }
 
-        return JWTParts({
-            header: substring(token, 0, firstDot),
-            payload: substring(token, firstDot + 1, secondDot),
-            signature: substring(token, secondDot + 1, bytes(token).length)
-        });
+        return
+            JWTParts({
+                header: substring(token, 0, firstDot),
+                payload: substring(token, firstDot + 1, secondDot),
+                signature: substring(token, secondDot + 1, bytes(token).length)
+            });
     }
 
-    function verifyJWTSignature(string memory signedData, string memory signature, bytes memory publicKey)
-        internal
-        pure
-        returns (bool)
-    {
+    function verifyJWTSignature(
+        string memory signedData,
+        string memory signature,
+        bytes memory publicKey
+    ) internal pure returns (bool) {
         // Convert signature from base64URL
         bytes memory signatureBytes = base64URLDecode(signature);
 
@@ -95,11 +96,11 @@ library JWTHandler {
     }
 
     // Cryptographic utility functions
-    function verifyRS256Signature(bytes memory /* message */, bytes memory /* signature */, bytes memory /* publicKey */)
-        internal
-        pure
-        returns (bool)
-    {
+    function verifyRS256Signature(
+        bytes memory /* message */,
+        bytes memory /* signature */,
+        bytes memory /* publicKey */
+    ) internal pure returns (bool) {
         // TODO: Placeholder for RSA-SHA256 signature verification
         // Would need actual RSA implementation
         return true;

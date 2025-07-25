@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
-import {SignatureVerificationFailed} from "../types/Common.sol";
-import {Header, RSAPubKey} from "../types/OidcStructs.sol";
-import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
-import {RSA} from "@openzeppelin/contracts/utils/cryptography/RSA.sol";
+import { SignatureVerificationFailed } from "../types/Common.sol";
+import { Header, RSAPubKey } from "../types/OidcStructs.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+
+import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
+import { RSA } from "@openzeppelin/contracts/utils/cryptography/RSA.sol";
 
 /**
  * @title OidcSignatureVerification
@@ -63,7 +64,7 @@ contract OidcSignatureVerification is Initializable, OwnableUpgradeable, UUPSUpg
      * @param n The modulus component of the RSA public key.
      */
     function addPubKey(bytes memory kid, bytes memory e, bytes memory n) external onlyOwner {
-        pubKeys[kid] = RSAPubKey({e: e, n: n});
+        pubKeys[kid] = RSAPubKey({ e: e, n: n });
         emit PubKeyAdded(kid, e, n);
     }
 

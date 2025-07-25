@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
-import {IAttestation} from "./interfaces/IAttestation.sol";
-import {IVerification} from "./interfaces/IVerification.sol";
-import {BaseQuoteConfig, Header, QuoteConfig} from "./types/Common.sol";
-import {InvalidVerifier, PayloadValidationFailed, SignatureVerificationFailed} from "./types/Common.sol";
-import {ParserUtils} from "./utils/ParserUtils.sol";
-import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import { IAttestation } from "./interfaces/IAttestation.sol";
+import { IVerification } from "./interfaces/IVerification.sol";
+import { BaseQuoteConfig, Header, QuoteConfig } from "./types/Common.sol";
+import { InvalidVerifier, PayloadValidationFailed, SignatureVerificationFailed } from "./types/Common.sol";
+import { ParserUtils } from "./utils/ParserUtils.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+
+import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 /**
  * @title FlareVtpmAttestation
@@ -58,7 +59,7 @@ contract FlareVtpmAttestation is IAttestation, Initializable, OwnableUpgradeable
     ) external initializer {
         __Ownable_init(initialOwner);
         __UUPSUpgradeable_init();
-        
+
         // Set initial base configuration
         requiredConfig = BaseQuoteConfig({
             hwmodel: bytes(hwmodel),
@@ -126,10 +127,11 @@ contract FlareVtpmAttestation is IAttestation, Initializable, OwnableUpgradeable
      * @param signature Signature associated with the JWT.
      * @return success Boolean indicating if the attestation was successfully verified and registered.
      */
-    function verifyAndAttest(bytes calldata header, bytes calldata payload, bytes calldata signature)
-        external
-        returns (bool success)
-    {
+    function verifyAndAttest(
+        bytes calldata header,
+        bytes calldata payload,
+        bytes calldata signature
+    ) external returns (bool success) {
         // Parse the JWT header to obtain the token type
         Header memory parsedHeader = parseHeader(header);
 
