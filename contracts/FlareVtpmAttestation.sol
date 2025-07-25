@@ -53,7 +53,7 @@ contract FlareVtpmAttestation is IAttestation, Ownable, Pausable {
      * @param quoteAddress Address of the vTPM owner.
      * @return QuoteConfig The configuration details associated with `quoteAddress`.
      */
-    function getRegisteredQuote(address quoteAddress) external view whenNotPaused returns (QuoteConfig memory) {
+    function getRegisteredQuote(address quoteAddress) external view returns (QuoteConfig memory) {
         return registeredQuotes[quoteAddress];
     }
 
@@ -135,7 +135,7 @@ contract FlareVtpmAttestation is IAttestation, Ownable, Pausable {
      * @param rawHeader Base64URL-decoded byte array representing the JWT header.
      * @return header A `Header` struct containing the parsed header information.
      */
-    function parseHeader(bytes calldata rawHeader) internal pure whenNotPaused returns (Header memory header) {
+    function parseHeader(bytes calldata rawHeader) internal pure returns (Header memory header) {
         // Extract "kid" field from the header
         header.kid = ParserUtils.extractStringValue(rawHeader, '"kid":"');
         if (ParserUtils.contains(rawHeader, bytes('"x5c":'))) {
@@ -150,7 +150,7 @@ contract FlareVtpmAttestation is IAttestation, Ownable, Pausable {
      * @param rawPayload Base64URL-decoded byte array representing the JWT payload.
      * @return config A `QuoteConfig` struct with the parsed vTPM configuration values.
      */
-    function parsePayload(bytes calldata rawPayload) internal pure whenNotPaused returns (QuoteConfig memory config) {
+    function parsePayload(bytes calldata rawPayload) internal pure returns (QuoteConfig memory config) {
         // Extract each field from the payload JSON
         config.exp = ParserUtils.extractUintValue(rawPayload, '"exp":');
         config.iat = ParserUtils.extractUintValue(rawPayload, '"iat":');
@@ -166,7 +166,7 @@ contract FlareVtpmAttestation is IAttestation, Ownable, Pausable {
      * Ensures that the configuration fields match the required values and checks the JWT's validity period.
      * @param config The vTPM configuration obtained from the JWT payload.
      */
-    function validatePayload(QuoteConfig memory config) internal view whenNotPaused {
+    function validatePayload(QuoteConfig memory config) internal view {
         if (config.exp < block.timestamp) {
             revert PayloadValidationFailed("Invalid expiry time");
         }
