@@ -4,11 +4,11 @@
   "description": "Flare vTPM Attestation - PKI-based JWT attestation validator for secure on-chain verification",
   "main": "index.js",
   "scripts": {
-    "build": "~/.foundry/bin/forge build",
-    "test": "~/.foundry/bin/forge test",
-    "test:verbose": "~/.foundry/bin/forge test -vvv",
-    "clean": "~/.foundry/bin/forge clean",
-    "install": "~/.foundry/bin/forge install",
+    "build": "forge build || ~/.foundry/bin/forge build",
+    "test": "forge test || ~/.foundry/bin/forge test",
+    "test:verbose": "forge test -vvv || ~/.foundry/bin/forge test -vvv",
+    "clean": "forge clean || ~/.foundry/bin/forge clean",
+    "install": "forge install || ~/.foundry/bin/forge install",
     "slither": "slither .",
     "lint": "solhint 'contracts/**/*.sol'",
     "format": "prettier --write 'contracts/**/*.sol'"
