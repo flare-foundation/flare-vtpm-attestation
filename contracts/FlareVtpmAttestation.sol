@@ -7,7 +7,7 @@ import {BaseQuoteConfig, Header, QuoteConfig} from "./types/Common.sol";
 import {InvalidVerifier, PayloadValidationFailed, SignatureVerificationFailed} from "./types/Common.sol";
 import {ParserUtils} from "./utils/ParserUtils.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title FlareVtpmAttestation
@@ -47,7 +47,6 @@ contract FlareVtpmAttestation is IAttestation, Ownable, Pausable {
         }
         tokenTypeVerifiers[tokenType] = tokenTypeVerifier;
     }
-    
 
     /**
      * @dev Retrieves the registered vTPM quote configuration for a specific address.
@@ -73,7 +72,7 @@ contract FlareVtpmAttestation is IAttestation, Ownable, Pausable {
         string calldata imageDigest,
         string calldata iss,
         bool secboot
-    ) external onlyOwner whenNotPaused{
+    ) external onlyOwner whenNotPaused {
         requiredConfig = BaseQuoteConfig({
             hwmodel: bytes(hwmodel),
             swname: bytes(swname),
@@ -94,7 +93,8 @@ contract FlareVtpmAttestation is IAttestation, Ownable, Pausable {
      * @return success Boolean indicating if the attestation was successfully verified and registered.
      */
     function verifyAndAttest(bytes calldata header, bytes calldata payload, bytes calldata signature)
-        external whenNotPaused
+        external
+        whenNotPaused
         returns (bool success)
     {
         // Parse the JWT header to obtain the token type
