@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import { Header } from "../types/Common.sol";
+import {Header} from "../types/Common.sol";
 
 /**
  * @title IVerification

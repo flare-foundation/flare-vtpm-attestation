@@ -16,9 +16,7 @@ interface IAttestation {
      * @param rawSignature The Base64URL-decoded RSA signature of the JWT, provided as a byte array.
      * @return success A boolean value indicating whether the token was successfully verified and registered.
      */
-    function verifyAndAttest(
-        bytes calldata rawHeader,
-        bytes calldata rawPayload,
-        bytes calldata rawSignature
-    ) external returns (bool success);
+    function verifyAndAttest(bytes calldata rawHeader, bytes calldata rawPayload, bytes calldata rawSignature)
+        external
+        returns (bool success);
 }

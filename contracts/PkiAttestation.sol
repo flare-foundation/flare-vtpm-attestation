@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
-import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { RSA } from "@openzeppelin/contracts/utils/cryptography/RSA.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {RSA} from "@openzeppelin/contracts/utils/cryptography/RSA.sol";
 
 /**
  * @title PkiAttestation
@@ -110,11 +110,10 @@ contract PkiAttestation is Initializable, OwnableUpgradeable, UUPSUpgradeable {
      * @param x5cChain Array of base64-encoded X.509 certificates (leaf, intermediate, root)
      * @return payload Decoded JWT payload on successful verification
      */
-    function verifyAttestation(
-        bytes memory headerB64,
-        bytes memory payloadB64,
-        bytes[] memory x5cChain
-    ) external returns (bytes memory payload) {
+    function verifyAttestation(bytes memory headerB64, bytes memory payloadB64, bytes[] memory x5cChain)
+        external
+        returns (bytes memory payload)
+    {
         bytes32 tokenHash = keccak256(abi.encodePacked(headerB64, payloadB64));
 
         try this._verifyAttestationInternal(headerB64, payloadB64, x5cChain) returns (bytes memory validPayload) {
@@ -131,11 +130,11 @@ contract PkiAttestation is Initializable, OwnableUpgradeable, UUPSUpgradeable {
      * @dev Internal verification function with comprehensive error handling
      * This function replicates all validation steps from the Python implementation
      */
-    function _verifyAttestationInternal(
-        bytes memory headerB64,
-        bytes memory payloadB64,
-        bytes[] memory x5cChain
-    ) external view returns (bytes memory) {
+    function _verifyAttestationInternal(bytes memory headerB64, bytes memory payloadB64, bytes[] memory x5cChain)
+        external
+        view
+        returns (bytes memory)
+    {
         // 1. Validate X.509 certificate chain length
         if (x5cChain.length != REQUIRED_CERT_COUNT) {
             revert("INVALID_X5C_LENGTH: Expected exactly 3 certificates");
@@ -191,7 +190,7 @@ contract PkiAttestation is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
         // Return header with algorithm (x5c is passed separately)
         string[] memory x5c = new string[](0);
-        return JWTHeader({ alg: alg, x5c: x5c });
+        return JWTHeader({alg: alg, x5c: x5c});
     }
 
     /**
@@ -209,17 +208,16 @@ contract PkiAttestation is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         // Calculate certificate fingerprint (SHA-256 of TBS certificate)
         bytes32 fingerprint = sha256(tbsCertificate);
 
-        return
-            Certificate({
-                derBytes: derBytes,
-                tbsCertificate: tbsCertificate,
-                publicKeyModulus: modulus,
-                publicKeyExponent: exponent,
-                notValidBefore: notValidBefore,
-                notValidAfter: notValidAfter,
-                fingerprint: fingerprint,
-                signature: signature
-            });
+        return Certificate({
+            derBytes: derBytes,
+            tbsCertificate: tbsCertificate,
+            publicKeyModulus: modulus,
+            publicKeyExponent: exponent,
+            notValidBefore: notValidBefore,
+            notValidAfter: notValidAfter,
+            fingerprint: fingerprint,
+            signature: signature
+        });
     }
 
     /**
@@ -258,10 +256,7 @@ contract PkiAttestation is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         bytes32 intermediateHash = sha256(intermediateCert.tbsCertificate);
         if (
             !RSA.pkcs1Sha256(
-                intermediateHash,
-                intermediateCert.signature,
-                rootCert.publicKeyExponent,
-                rootCert.publicKeyModulus
+                intermediateHash, intermediateCert.signature, rootCert.publicKeyExponent, rootCert.publicKeyModulus
             )
         ) {
             revert("INVALID_CERT_CHAIN: Intermediate certificate signature invalid");
@@ -271,10 +266,7 @@ contract PkiAttestation is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         bytes32 leafHash = sha256(leafCert.tbsCertificate);
         if (
             !RSA.pkcs1Sha256(
-                leafHash,
-                leafCert.signature,
-                intermediateCert.publicKeyExponent,
-                intermediateCert.publicKeyModulus
+                leafHash, leafCert.signature, intermediateCert.publicKeyExponent, intermediateCert.publicKeyModulus
             )
         ) {
             revert("INVALID_CERT_CHAIN: Leaf certificate signature invalid");
@@ -284,11 +276,10 @@ contract PkiAttestation is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /**
      * @dev Verify JWT signature using RSA-SHA256 with the leaf certificate
      */
-    function _verifyJWTSignature(
-        bytes memory headerB64,
-        bytes memory payloadB64,
-        Certificate memory signingCert
-    ) internal view {
+    function _verifyJWTSignature(bytes memory headerB64, bytes memory payloadB64, Certificate memory signingCert)
+        internal
+        view
+    {
         // Reconstruct signed data: header.payload
         bytes memory signedData = abi.encodePacked(headerB64, ".", payloadB64);
 
@@ -355,9 +346,11 @@ contract PkiAttestation is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /**
      * @dev Extract RSA public key components from DER certificate
      */
-    function _extractRSAPublicKey(
-        bytes memory derBytes
-    ) internal pure returns (bytes memory modulus, bytes memory exponent) {
+    function _extractRSAPublicKey(bytes memory derBytes)
+        internal
+        pure
+        returns (bytes memory modulus, bytes memory exponent)
+    {
         // Simplified DER parsing - production needs full ASN.1 parser
         if (derBytes.length < MIN_RSA_KEY_SIZE + 100) {
             revert("INVALID_CERT_FORMAT: Certificate too short for RSA key");
@@ -381,9 +374,11 @@ contract PkiAttestation is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /**
      * @dev Extract certificate validity period from DER data
      */
-    function _extractValidityPeriod(
-        bytes memory /* derBytes */
-    ) internal view returns (uint256 notValidBefore, uint256 notValidAfter) {
+    function _extractValidityPeriod(bytes memory /* derBytes */ )
+        internal
+        view
+        returns (uint256 notValidBefore, uint256 notValidAfter)
+    {
         // Simplified implementation - would need proper ASN.1 parsing
         // For demo purposes, use reasonable defaults with safe arithmetic
         uint256 currentTime = block.timestamp;
@@ -416,7 +411,8 @@ contract PkiAttestation is Initializable, OwnableUpgradeable, UUPSUpgradeable {
      */
     function _extractJWTSignature(
         bytes memory,
-        /* headerB64 */ bytes memory /* payloadB64 */
+        /* headerB64 */
+        bytes memory /* payloadB64 */
     ) internal pure returns (bytes memory) {
         // In a real implementation, this would be extracted from the full JWT token
         // For now, return a placeholder signature
@@ -428,18 +424,17 @@ contract PkiAttestation is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /**
      * @dev Parse JWT payload from JSON bytes
      */
-    function _parseJWTPayload(bytes memory /* payloadBytes */) internal view returns (JWTPayload memory) {
+    function _parseJWTPayload(bytes memory /* payloadBytes */ ) internal view returns (JWTPayload memory) {
         // Simplified JSON parsing - production would need robust parser
-        return
-            JWTPayload({
-                aud: REQUIRED_AUDIENCE,
-                iss: REQUIRED_ISSUER,
-                exp: block.timestamp + 3600, // 1 hour from now
-                iat: block.timestamp,
-                nbf: block.timestamp,
-                sub: "test-subject",
-                eat_nonce: "0x0000000000000000000000000000000000000dEaD"
-            });
+        return JWTPayload({
+            aud: REQUIRED_AUDIENCE,
+            iss: REQUIRED_ISSUER,
+            exp: block.timestamp + 3600, // 1 hour from now
+            iat: block.timestamp,
+            nbf: block.timestamp,
+            sub: "test-subject",
+            eat_nonce: "0x0000000000000000000000000000000000000dEaD"
+        });
     }
 
     /**

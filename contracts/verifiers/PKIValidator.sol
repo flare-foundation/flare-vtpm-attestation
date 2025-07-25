@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
-import { BigNumber } from "../utils/BigNumber.sol";
+import {BigNumber} from "../utils/BigNumber.sol";
 
-import { CryptoUtils } from "../utils/CryptoUtils.sol";
-import { JWTHandler } from "../utils/JWTHandler.sol";
-import { PKICertificateParser } from "../utils/PKICertificateParser.sol";
-import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {CryptoUtils} from "../utils/CryptoUtils.sol";
+import {JWTHandler} from "../utils/JWTHandler.sol";
+import {PKICertificateParser} from "../utils/PKICertificateParser.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 contract PKIValidator is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     // Errors
@@ -45,26 +45,24 @@ contract PKIValidator is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     // Main validation function that ties everything together
-    function validatePKIToken(
-        bytes memory storedRootCertBytes,
-        string memory attestationToken
-    ) public returns (ValidationResult memory) {
+    function validatePKIToken(bytes memory storedRootCertBytes, string memory attestationToken)
+        public
+        returns (ValidationResult memory)
+    {
         // 1. Parse the stored root certificate
-        PKICertificateParser.Certificate memory storedRootCert = PKICertificateParser.decodeAndParseCertificate(
-            string(storedRootCertBytes)
-        );
+        PKICertificateParser.Certificate memory storedRootCert =
+            PKICertificateParser.decodeAndParseCertificate(string(storedRootCertBytes));
 
         // 2. Get JWT headers and validate algorithm
         JWTHandler.JWTHeaders memory headers = JWTHandler.getUnverifiedHeader(attestationToken);
         if (keccak256(bytes(headers.alg)) != keccak256(bytes("RS256"))) {
             emit ValidationFailure(keccak256(bytes(attestationToken)), "Invalid algorithm");
-            return ValidationResult({ isValid: false, message: "Invalid algorithm - expected RS256", payload: "" });
+            return ValidationResult({isValid: false, message: "Invalid algorithm - expected RS256", payload: ""});
         }
 
         // 3. Extract and validate certificates from x5c header
-        PKICertificateParser.PKICertificates memory certificates = PKICertificateParser.extractCertificateFromX5cHeader(
-            headers.x5c
-        );
+        PKICertificateParser.PKICertificates memory certificates =
+            PKICertificateParser.extractCertificateFromX5cHeader(headers.x5c);
 
         // 4. Convert certificate public key to BigNum format for RSA operations
         BigNumber.BigNum memory publicKey = convertPublicKeyToBigNum(certificates.leafCert.publicKey);
@@ -73,21 +71,21 @@ contract PKIValidator is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         bool chainValid = verifyCertificateChainWithRSA(certificates, storedRootCert);
         if (!chainValid) {
             emit ValidationFailure(keccak256(bytes(attestationToken)), "Invalid certificate chain");
-            return ValidationResult({ isValid: false, message: "Invalid certificate chain", payload: "" });
+            return ValidationResult({isValid: false, message: "Invalid certificate chain", payload: ""});
         }
 
         // 6. Verify JWT signature using BigNumber RSA operations
         bool signatureValid = verifyJWTSignatureWithRSA(attestationToken, publicKey);
         if (!signatureValid) {
             emit ValidationFailure(keccak256(bytes(attestationToken)), "Invalid signature");
-            return ValidationResult({ isValid: false, message: "Invalid JWT signature", payload: "" });
+            return ValidationResult({isValid: false, message: "Invalid JWT signature", payload: ""});
         }
 
         // 7. Decode and return JWT payload
         bytes memory payload = JWTHandler.decodeJWT(attestationToken, certificates.leafCert.publicKey);
 
         emit ValidationSuccess(keccak256(bytes(attestationToken)));
-        return ValidationResult({ isValid: true, message: "Validation successful", payload: payload });
+        return ValidationResult({isValid: true, message: "Validation successful", payload: payload});
     }
 
     // Helper function to verify certificate chain using RSA
@@ -116,7 +114,8 @@ contract PKIValidator is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     // Helper function to verify JWT signature using RSA
     function verifyJWTSignatureWithRSA(
         string memory,
-        /* token */ BigNumber.BigNum memory /* publicKey */
+        /* token */
+        BigNumber.BigNum memory /* publicKey */
     ) internal pure returns (bool) {
         // 1. Split JWT
         // bytes memory parts = JWTHandler.splitJWT(token); // Unused for now
@@ -155,7 +154,7 @@ contract PKIValidator is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             limbs[i / 32] |= uint256(uint8(data[i])) << ((i % 32) * 8);
         }
 
-        return BigNumber.BigNum({ limbs: limbs, negative: false });
+        return BigNumber.BigNum({limbs: limbs, negative: false});
     }
 
     function bigNumToBytes(BigNumber.BigNum memory num) internal pure returns (bytes memory) {

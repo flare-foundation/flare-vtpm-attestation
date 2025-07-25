@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
-import { FlareVtpmAttestation } from "../FlareVtpmAttestation.sol";
+import {FlareVtpmAttestation} from "../FlareVtpmAttestation.sol";
 
 /**
  * @title FlareVtpmAttestationV2

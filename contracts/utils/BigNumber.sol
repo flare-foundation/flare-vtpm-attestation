@@ -37,13 +37,12 @@ contract BigNumber {
 
         result[maxLength] = carry;
 
-        return
-            normalize(
-                BigNum({
-                    limbs: result,
-                    negative: false // Simplified: assumes positive numbers
-                })
-            );
+        return normalize(
+            BigNum({
+                limbs: result,
+                negative: false // Simplified: assumes positive numbers
+            })
+        );
     }
 
     function sub(BigNum memory a, BigNum memory b) public pure returns (BigNum memory) {
@@ -73,7 +72,7 @@ contract BigNumber {
             result[i] = diff;
         }
 
-        return normalize(BigNum({ limbs: result, negative: false }));
+        return normalize(BigNum({limbs: result, negative: false}));
     }
 
     function mul(BigNum memory a, BigNum memory b) public pure returns (BigNum memory) {
@@ -96,9 +95,7 @@ contract BigNumber {
                     let mm := mulmod(xl, yl, not(0))
                     product := mul(xl, yl)
                     overflow := sub(mm, product)
-                    if lt(mm, product) {
-                        overflow := add(overflow, 1)
-                    }
+                    if lt(mm, product) { overflow := add(overflow, 1) }
                 }
 
                 // Add to result with carry
@@ -112,19 +109,20 @@ contract BigNumber {
             }
         }
 
-        return normalize(BigNum({ limbs: result, negative: a.negative != b.negative }));
+        return normalize(BigNum({limbs: result, negative: a.negative != b.negative}));
     }
 
-    function div(
-        BigNum memory a,
-        BigNum memory b
-    ) public pure returns (BigNum memory quotient, BigNum memory remainder) {
+    function div(BigNum memory a, BigNum memory b)
+        public
+        pure
+        returns (BigNum memory quotient, BigNum memory remainder)
+    {
         if (isZero(b)) {
             revert DivisionByZero();
         }
 
         if (compare(a, b) < 0) {
-            return (BigNum({ limbs: new uint256[](1), negative: false }), a);
+            return (BigNum({limbs: new uint256[](1), negative: false}), a);
         }
 
         // Initialize quotient and remainder
@@ -134,27 +132,27 @@ contract BigNumber {
         // Perform long division
         for (uint256 i = a.limbs.length; i > 0; i--) {
             uint256 qGuess = estimateQuotient(r, b, i - 1);
-            BigNum memory product = mul(BigNum({ limbs: new uint256[](1), negative: false }), b);
+            BigNum memory product = mul(BigNum({limbs: new uint256[](1), negative: false}), b);
             product.limbs[0] = qGuess;
 
             r = sub(r, shiftLeft(product, (i - 1) * WORD_BITS));
             q[i - 1] = qGuess;
         }
 
-        return (normalize(BigNum({ limbs: q, negative: a.negative != b.negative })), normalize(r));
+        return (normalize(BigNum({limbs: q, negative: a.negative != b.negative})), normalize(r));
     }
 
     // Modular arithmetic for RSA
-    function modPow(
-        BigNum memory base,
-        BigNum memory exponent,
-        BigNum memory modulus
-    ) public pure returns (BigNum memory) {
+    function modPow(BigNum memory base, BigNum memory exponent, BigNum memory modulus)
+        public
+        pure
+        returns (BigNum memory)
+    {
         if (isZero(modulus)) {
             revert DivisionByZero();
         }
 
-        BigNum memory result = BigNum({ limbs: new uint256[](1), negative: false });
+        BigNum memory result = BigNum({limbs: new uint256[](1), negative: false});
         result.limbs[0] = 1;
 
         BigNum memory b = copyBigNum(base);
@@ -180,7 +178,7 @@ contract BigNumber {
         if (i == 0) {
             // Number is zero
             uint256[] memory zero_result = new uint256[](1);
-            return BigNum({ limbs: zero_result, negative: false });
+            return BigNum({limbs: zero_result, negative: false});
         }
 
         uint256[] memory result = new uint256[](i);
@@ -188,18 +186,18 @@ contract BigNumber {
             result[j] = num.limbs[j];
         }
 
-        return BigNum({ limbs: result, negative: num.negative });
+        return BigNum({limbs: result, negative: num.negative});
     }
 
     function max(uint256 a, uint256 b) internal pure returns (uint256) {
         return a > b ? a : b;
     }
 
-    function estimateQuotient(
-        BigNum memory dividend,
-        BigNum memory divisor,
-        uint256 position
-    ) internal pure returns (uint256) {
+    function estimateQuotient(BigNum memory dividend, BigNum memory divisor, uint256 position)
+        internal
+        pure
+        returns (uint256)
+    {
         // Handle edge cases
         if (position >= dividend.limbs.length) return 0;
         if (isZero(divisor)) revert DivisionByZero();
@@ -222,10 +220,10 @@ contract BigNumber {
         // Adjust the guess (usually only needs 2-3 iterations)
         bool needsAdjustment = true;
         while (needsAdjustment) {
-            BigNum memory product = mul(BigNum({ limbs: new uint256[](1), negative: false }), divisor);
+            BigNum memory product = mul(BigNum({limbs: new uint256[](1), negative: false}), divisor);
             product.limbs[0] = guess;
 
-            BigNum memory shifted_dividend = BigNum({ limbs: new uint256[](2), negative: false });
+            BigNum memory shifted_dividend = BigNum({limbs: new uint256[](2), negative: false});
             shifted_dividend.limbs[0] = n2;
             shifted_dividend.limbs[1] = n1;
 
@@ -267,7 +265,7 @@ contract BigNumber {
             result[newLength - 1] = carry;
         }
 
-        return normalize(BigNum({ limbs: result, negative: num.negative }));
+        return normalize(BigNum({limbs: result, negative: num.negative}));
     }
 
     function modMul(BigNum memory a, BigNum memory b, BigNum memory m) internal pure returns (BigNum memory) {
@@ -306,6 +304,6 @@ contract BigNumber {
         for (uint256 i = 0; i < num.limbs.length; i++) {
             newLimbs[i] = num.limbs[i];
         }
-        return BigNum({ limbs: newLimbs, negative: num.negative });
+        return BigNum({limbs: newLimbs, negative: num.negative});
     }
 }
