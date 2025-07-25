@@ -6,6 +6,7 @@ import {console} from "forge-std/console.sol";
 
 import {FlareVtpmAttestation} from "../contracts/FlareVtpmAttestation.sol";
 import {OidcSignatureVerification} from "../contracts/verifiers/OidcSignatureVerification.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 import {
     Header, PayloadValidationFailed, QuoteConfig, SignatureVerificationFailed
@@ -53,17 +54,39 @@ contract FlareVtpmAttestationTest is Test {
      * and initializing it with test data.
      */
     function setUp() public {
-        // Deploy the FlareVtpmAttestation contract
-        flareVtpm = new FlareVtpmAttestation();
+        address owner = address(this);
 
-        // Set the required vTPM configuration in the contract
-        flareVtpm.setBaseQuoteConfig(HWMODEL, SWNAME, IMAGEDIGEST, ISS, SECBOOT);
+        // Deploy implementation contracts
+        FlareVtpmAttestation flareVtpmImpl = new FlareVtpmAttestation();
+        OidcSignatureVerification oidcVerifierImpl = new OidcSignatureVerification();
 
-        // Deploy the OIDC signature verifier and register it with the contract
-        oidcVerifier = new OidcSignatureVerification();
+        // Prepare initialization data for FlareVtpmAttestation
+        bytes memory flareVtpmInitData = abi.encodeWithSelector(
+            FlareVtpmAttestation.initialize.selector,
+            owner,
+            HWMODEL,
+            SWNAME,
+            IMAGEDIGEST,
+            ISS,
+            SECBOOT
+        );
+
+        // Deploy FlareVtpmAttestation proxy
+        ERC1967Proxy flareVtpmProxy = new ERC1967Proxy(address(flareVtpmImpl), flareVtpmInitData);
+        flareVtpm = FlareVtpmAttestation(address(flareVtpmProxy));
+
+        // Prepare initialization data for OidcSignatureVerification
+        bytes memory oidcInitData = abi.encodeWithSelector(
+            OidcSignatureVerification.initialize.selector,
+            owner
+        );
+
+        // Deploy OidcSignatureVerification proxy
+        ERC1967Proxy oidcVerifierProxy = new ERC1967Proxy(address(oidcVerifierImpl), oidcInitData);
+        oidcVerifier = OidcSignatureVerification(address(oidcVerifierProxy));
+
+        // Set token type verifier and add RSA public key
         flareVtpm.setTokenTypeVerifier(address(oidcVerifier));
-
-        // Add the RSA public key to the verifier's key registry
         oidcVerifier.addPubKey(KID, E, N);
 
         // Set current block time between issued and expiry time for testing

@@ -3,6 +3,7 @@ pragma solidity ^0.8.27;
 
 import {FlareVtpmAttestation} from "../contracts/FlareVtpmAttestation.sol";
 import {OidcSignatureVerification} from "../contracts/verifiers/OidcSignatureVerification.sol";
+import {Upgrades} from "@openzeppelin/foundry-upgrades/Upgrades.sol";
 import {Script, console} from "forge-std/Script.sol";
 
 contract FlareVtpmAttestationScript is Script {
@@ -13,21 +14,20 @@ contract FlareVtpmAttestationScript is Script {
     string iss = vm.envString("ISS");
     bool secboot = vm.envBool("SECBOOT");
 
-    FlareVtpmAttestation flareVtpm;
-    OidcSignatureVerification oidcVerifier;
-
     function deploy() public {
         // Starting the broadcast of transactions from the deployer account
         vm.startBroadcast(deployerPrivateKey);
 
-        // Deploy the FlareVtpmAttestation contract
-        flareVtpm = new FlareVtpmAttestation();
-        console.log("FlareVtpmAttestation deployed at:", address(flareVtpm));
+        address deployer = vm.addr(deployerPrivateKey);
 
-        // Set base configuration on the deployed contract
-        flareVtpm.setBaseQuoteConfig(hwmodel, swname, imageDigest, iss, secboot);
+        // Deploy the FlareVtpmAttestation proxy
+        address flareVtpm = Upgrades.deployUUPSProxy(
+            "FlareVtpmAttestation.sol",
+            abi.encodeCall(FlareVtpmAttestation.initialize, (deployer, hwmodel, swname, imageDigest, iss, secboot))
+        );
+        console.log("FlareVtpmAttestation proxy deployed at:", flareVtpm);
 
-        // Log that the base configuration has been set
+        // Log that the base configuration has been set during initialization
         console.log("Base quote configuration set with:");
         console.log("  Hardware Model:", hwmodel);
         console.log("  Software Name:", swname);
@@ -35,12 +35,15 @@ contract FlareVtpmAttestationScript is Script {
         console.log("  Issuer:", iss);
         console.log("  Secure Boot:", secboot);
 
-        // Deploy the OidcSignatureVerification contract
-        oidcVerifier = new OidcSignatureVerification();
-        console.log("OidcSignatureVerification deployed at:", address(oidcVerifier));
+        // Deploy the OidcSignatureVerification proxy
+        address oidcVerifier = Upgrades.deployUUPSProxy(
+            "OidcSignatureVerification.sol",
+            abi.encodeCall(OidcSignatureVerification.initialize, (deployer))
+        );
+        console.log("OidcSignatureVerification proxy deployed at:", oidcVerifier);
 
         // Set the token type verifier to the OidcSignatureVerification contract
-        flareVtpm.setTokenTypeVerifier(address(oidcVerifier));
+        FlareVtpmAttestation(flareVtpm).setTokenTypeVerifier(oidcVerifier);
         console.log("FlareVtpmAttestation token type verifier set to OidcSignatureVerification");
 
         vm.stopBroadcast();
