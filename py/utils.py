@@ -33,7 +33,7 @@ class GceSubmod(BaseModel):
 
 
 class NvidiaGpuSubmod(BaseModel):
-    cc_mode: Literal["ON", "OFF"]
+    cc_mode: Literal["ON", "OFF", "DevTools"]
 
 
 class Submods(BaseModel):

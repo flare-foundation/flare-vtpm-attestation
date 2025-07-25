@@ -60,13 +60,13 @@ class PKIValidator:
     def __init__(self, trusted_root: x509.Certificate) -> None:
         self.trusted_root = trusted_root
 
-    def validate(self, token: str) -> dict[str, Any]:
-        unverified_token = get_unverified_token(token)
+    def validate(self, raw_token: str) -> dict[str, Any]:
+        unverified_token = get_unverified_token(raw_token)
         self._print_token(unverified_token)
         certs = self._load_certs(unverified_token.header.x5c)
         self._check_validity(certs)
         self._verify_chain(certs)
-        return self._verify_signature(token, certs.leaf)
+        return self._verify_signature(raw_token, certs.leaf)
 
     def _print_token(self, token: AttestationToken) -> None:
         log.info("=== Unverified Token ===")
@@ -134,7 +134,7 @@ class PKIValidator:
         try:
             ctx.verify_certificate()
         except X509StoreContextError as err:
-            log.error("Certificate chain verification failed: %s", err.errors[2]) # noqa: TRY400
+            log.error("Certificate chain verification failed: %s", err.errors[2])  # noqa: TRY400
 
         # Fingerprint match
         fp_prov = hashlib.sha256(certs.root.tbs_certificate_bytes).digest()
@@ -142,7 +142,9 @@ class PKIValidator:
         if fp_prov != fp_trust:
             log.error("Root certificate fingerprint mismatch")
 
-    def _verify_signature(self, token: str, leaf: x509.Certificate) -> dict[str, Any]:
+    def _verify_signature(
+        self, raw_token: str, leaf: x509.Certificate
+    ) -> dict[str, Any]:
         pubkey = leaf.public_key()
         pem = pubkey.public_bytes(
             serialization.Encoding.PEM,
@@ -150,7 +152,11 @@ class PKIValidator:
         )
         try:
             return jwt.decode(
-                token, key=pem, algorithms=[REQUIRED_ALGO], leeway=LEEWAY, audience=AUD
+                raw_token,
+                key=pem,
+                algorithms=[REQUIRED_ALGO],
+                leeway=LEEWAY,
+                audience=AUD,
             )
         except ExpiredSignatureError as e:
             msg = "Signature verification failed"
@@ -164,7 +170,8 @@ def main(token_file: Path, root_file: Path) -> None:
     token = token_file.read_text().strip()
 
     try:
-        validator.validate(token)
+        verified_token = validator.validate(token)
+        print(verified_token)
         log.info("Validation complete.")
     except PKIValidationError as e:
         log.exception("Validation failed: %s")
