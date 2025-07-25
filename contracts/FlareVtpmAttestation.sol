@@ -240,6 +240,8 @@ contract FlareVtpmAttestation is IAttestation, Initializable, OwnableUpgradeable
     function unpause() public onlyOwner {
         _unpause();
     }
+
+    /**
      * @dev Authorizes contract upgrades. Only the owner can authorize upgrades.
      * @param newImplementation Address of the new implementation contract.
      */
