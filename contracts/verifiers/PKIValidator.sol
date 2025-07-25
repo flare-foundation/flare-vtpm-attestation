@@ -6,8 +6,11 @@ import {BigNumber} from "../utils/BigNumber.sol";
 import {CryptoUtils} from "../utils/CryptoUtils.sol";
 import {JWTHandler} from "../utils/JWTHandler.sol";
 import {PKICertificateParser} from "../utils/PKICertificateParser.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-contract PKIValidator {
+contract PKIValidator is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     // Errors
     error InvalidSignature();
     error InvalidCertificate();
@@ -21,6 +24,23 @@ contract PKIValidator {
         bool isValid;
         string message;
         bytes payload;
+    }
+
+    /**
+     * @dev Disables initializers to prevent the implementation contract from being initialized.
+     * @custom:oz-upgrades-unsafe-allow constructor
+     */
+    constructor() {
+        _disableInitializers();
+    }
+
+    /**
+     * @dev Initializes the contract, setting the initial owner.
+     * @param initialOwner The address of the initial owner.
+     */
+    function initialize(address initialOwner) external initializer {
+        __Ownable_init(initialOwner);
+        __UUPSUpgradeable_init();
     }
 
     // Main validation function that ties everything together
@@ -150,4 +170,10 @@ contract PKIValidator {
 
         return result;
     }
+
+    /**
+     * @dev Authorizes contract upgrades. Only the owner can authorize upgrades.
+     * @param newImplementation Address of the new implementation contract.
+     */
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 }
