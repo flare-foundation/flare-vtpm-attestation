@@ -7,13 +7,14 @@ import {BaseQuoteConfig, Header, QuoteConfig} from "./types/Common.sol";
 import {InvalidVerifier, PayloadValidationFailed, SignatureVerificationFailed} from "./types/Common.sol";
 import {ParserUtils} from "./utils/ParserUtils.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
 /**
  * @title FlareVtpmAttestation
  * @dev A contract for verifying RSA-signed JWTs and registering virtual Trusted Platform Module (vTPM) attestations.
  * Allows for configuring required vTPM specifications and validating token-based attestations.
  */
-contract FlareVtpmAttestation is IAttestation, Ownable {
+contract FlareVtpmAttestation is IAttestation, Ownable, Pausable {
     /// @notice Stores the vTPM configurations for each registered address
     mapping(address => QuoteConfig) public registeredQuotes;
 
@@ -46,6 +47,7 @@ contract FlareVtpmAttestation is IAttestation, Ownable {
         }
         tokenTypeVerifiers[tokenType] = tokenTypeVerifier;
     }
+    
 
     /**
      * @dev Retrieves the registered vTPM quote configuration for a specific address.
@@ -186,5 +188,21 @@ contract FlareVtpmAttestation is IAttestation, Ownable {
         if (keccak256(config.base.imageDigest) != keccak256(requiredConfig.imageDigest)) {
             revert PayloadValidationFailed("Invalid image digest");
         }
+    }
+
+    /**
+     * @dev Pauses the contract
+     * Only the contract owner can pause the contract
+     */
+    function pause() public onlyOwner {
+        _pause();
+    }
+
+    /**
+     * @dev Unpauses the contract
+     * Only the contract owner can unpause the contract
+     */
+    function unpause() public onlyOwner {
+        _unpause();
     }
 }
