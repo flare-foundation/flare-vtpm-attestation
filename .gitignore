@@ -13,4 +13,5 @@ docs/
 # Dotenv file
 .env
 .gas-snapshot
-.DS_Storenode_modules/
+.DS_Store
+node_modules/
