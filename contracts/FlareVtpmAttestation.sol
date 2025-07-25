@@ -39,7 +39,7 @@ contract FlareVtpmAttestation is IAttestation, Ownable, Pausable {
      * @dev Assigns a verifier contract to handle a specific token type.
      * @param verifier Address of the contract implementing the IVerification interface for this token type.
      */
-    function setTokenTypeVerifier(address verifier) external onlyOwner {
+    function setTokenTypeVerifier(address verifier) external onlyOwner whenNotPaused {
         IVerification tokenTypeVerifier = IVerification(verifier);
         bytes memory tokenType = tokenTypeVerifier.tokenType();
         if (tokenType.length == 0) {
@@ -54,7 +54,7 @@ contract FlareVtpmAttestation is IAttestation, Ownable, Pausable {
      * @param quoteAddress Address of the vTPM owner.
      * @return QuoteConfig The configuration details associated with `quoteAddress`.
      */
-    function getRegisteredQuote(address quoteAddress) external view returns (QuoteConfig memory) {
+    function getRegisteredQuote(address quoteAddress) external view whenNotPaused returns (QuoteConfig memory) {
         return registeredQuotes[quoteAddress];
     }
 
@@ -73,7 +73,7 @@ contract FlareVtpmAttestation is IAttestation, Ownable, Pausable {
         string calldata imageDigest,
         string calldata iss,
         bool secboot
-    ) external onlyOwner {
+    ) external onlyOwner whenNotPaused{
         requiredConfig = BaseQuoteConfig({
             hwmodel: bytes(hwmodel),
             swname: bytes(swname),
@@ -94,7 +94,7 @@ contract FlareVtpmAttestation is IAttestation, Ownable, Pausable {
      * @return success Boolean indicating if the attestation was successfully verified and registered.
      */
     function verifyAndAttest(bytes calldata header, bytes calldata payload, bytes calldata signature)
-        external
+        external whenNotPaused
         returns (bool success)
     {
         // Parse the JWT header to obtain the token type
@@ -135,7 +135,7 @@ contract FlareVtpmAttestation is IAttestation, Ownable, Pausable {
      * @param rawHeader Base64URL-decoded byte array representing the JWT header.
      * @return header A `Header` struct containing the parsed header information.
      */
-    function parseHeader(bytes calldata rawHeader) internal pure returns (Header memory header) {
+    function parseHeader(bytes calldata rawHeader) internal pure whenNotPaused returns (Header memory header) {
         // Extract "kid" field from the header
         header.kid = ParserUtils.extractStringValue(rawHeader, '"kid":"');
         if (ParserUtils.contains(rawHeader, bytes('"x5c":'))) {
@@ -150,7 +150,7 @@ contract FlareVtpmAttestation is IAttestation, Ownable, Pausable {
      * @param rawPayload Base64URL-decoded byte array representing the JWT payload.
      * @return config A `QuoteConfig` struct with the parsed vTPM configuration values.
      */
-    function parsePayload(bytes calldata rawPayload) internal pure returns (QuoteConfig memory config) {
+    function parsePayload(bytes calldata rawPayload) internal pure whenNotPaused returns (QuoteConfig memory config) {
         // Extract each field from the payload JSON
         config.exp = ParserUtils.extractUintValue(rawPayload, '"exp":');
         config.iat = ParserUtils.extractUintValue(rawPayload, '"iat":');
@@ -166,7 +166,7 @@ contract FlareVtpmAttestation is IAttestation, Ownable, Pausable {
      * Ensures that the configuration fields match the required values and checks the JWT's validity period.
      * @param config The vTPM configuration obtained from the JWT payload.
      */
-    function validatePayload(QuoteConfig memory config) internal view {
+    function validatePayload(QuoteConfig memory config) internal view whenNotPaused {
         if (config.exp < block.timestamp) {
             revert PayloadValidationFailed("Invalid expiry time");
         }
