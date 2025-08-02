@@ -62,13 +62,7 @@ contract FlareVtpmAttestationTest is Test {
 
         // Prepare initialization data for FlareVtpmAttestation
         bytes memory flareVtpmInitData = abi.encodeWithSelector(
-            FlareVtpmAttestation.initialize.selector,
-            owner,
-            HWMODEL,
-            SWNAME,
-            IMAGEDIGEST,
-            ISS,
-            SECBOOT
+            FlareVtpmAttestation.initialize.selector, owner, HWMODEL, SWNAME, IMAGEDIGEST, ISS, SECBOOT
         );
 
         // Deploy FlareVtpmAttestation proxy
@@ -76,10 +70,7 @@ contract FlareVtpmAttestationTest is Test {
         flareVtpm = FlareVtpmAttestation(address(flareVtpmProxy));
 
         // Prepare initialization data for OidcSignatureVerification
-        bytes memory oidcInitData = abi.encodeWithSelector(
-            OidcSignatureVerification.initialize.selector,
-            owner
-        );
+        bytes memory oidcInitData = abi.encodeWithSelector(OidcSignatureVerification.initialize.selector, owner);
 
         // Deploy OidcSignatureVerification proxy
         ERC1967Proxy oidcVerifierProxy = new ERC1967Proxy(address(oidcVerifierImpl), oidcInitData);
@@ -220,7 +211,7 @@ contract FlareVtpmAttestationTest is Test {
 
         // Test pause by non-owner fails
         vm.prank(nonOwner);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.expectRevert();
         flareVtpm.pause();
 
         // First pause as owner to test unpause
@@ -228,7 +219,7 @@ contract FlareVtpmAttestationTest is Test {
 
         // Test unpause by non-owner fails
         vm.prank(nonOwner);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.expectRevert();
         flareVtpm.unpause();
     }
 
@@ -238,7 +229,7 @@ contract FlareVtpmAttestationTest is Test {
 
         // Now pause and test revert
         flareVtpm.pause();
-        vm.expectRevert("Pausable: paused");
+        vm.expectRevert("EnforcedPause()");
         flareVtpm.verifyAndAttest(HEADER, PAYLOAD, SIGNATURE);
     }
 

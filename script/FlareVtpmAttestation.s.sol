@@ -37,8 +37,7 @@ contract FlareVtpmAttestationScript is Script {
 
         // Deploy the OidcSignatureVerification proxy
         address oidcVerifier = Upgrades.deployUUPSProxy(
-            "OidcSignatureVerification.sol",
-            abi.encodeCall(OidcSignatureVerification.initialize, (deployer))
+            "OidcSignatureVerification.sol", abi.encodeCall(OidcSignatureVerification.initialize, (deployer))
         );
         console.log("OidcSignatureVerification proxy deployed at:", oidcVerifier);
 

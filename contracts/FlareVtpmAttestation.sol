@@ -6,17 +6,25 @@ import {IVerification} from "./interfaces/IVerification.sol";
 import {BaseQuoteConfig, Header, QuoteConfig} from "./types/Common.sol";
 import {InvalidVerifier, PayloadValidationFailed, SignatureVerificationFailed} from "./types/Common.sol";
 import {ParserUtils} from "./utils/ParserUtils.sol";
-import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
 /**
  * @title FlareVtpmAttestation
  * @dev A contract for verifying RSA-signed JWTs and registering virtual Trusted Platform Module (vTPM) attestations.
  * Allows for configuring required vTPM specifications and validating token-based attestations.
  */
-contract FlareVtpmAttestation is IAttestation, Initializable, OwnableUpgradeable, UUPSUpgradeable, Pausable {
+contract FlareVtpmAttestation is
+    IAttestation,
+    Initializable,
+    OwnableUpgradeable,
+    UUPSUpgradeable,
+    PausableUpgradeable
+{
     /// @notice Stores the vTPM configurations for each registered address
     mapping(address => QuoteConfig) public registeredQuotes;
 
@@ -59,7 +67,8 @@ contract FlareVtpmAttestation is IAttestation, Initializable, OwnableUpgradeable
     ) external initializer {
         __Ownable_init(initialOwner);
         __UUPSUpgradeable_init();
-        
+        __Pausable_init();
+
         // Set initial base configuration
         requiredConfig = BaseQuoteConfig({
             hwmodel: bytes(hwmodel),
