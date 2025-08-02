@@ -47,9 +47,9 @@ contract BigNumber {
 
     function sub(BigNum memory a, BigNum memory b) public pure returns (BigNum memory) {
         if (compare(a, b) < 0) {
-            BigNum memory result = sub(b, a);
-            result.negative = true;
-            return result;
+            BigNum memory tempResult = sub(b, a);
+            tempResult.negative = true;
+            return tempResult;
         }
 
         uint256[] memory result = new uint256[](a.limbs.length);
@@ -177,8 +177,8 @@ contract BigNumber {
 
         if (i == 0) {
             // Number is zero
-            uint256[] memory result = new uint256[](1);
-            return BigNum({limbs: result, negative: false});
+            uint256[] memory zeroResult = new uint256[](1);
+            return BigNum({limbs: zeroResult, negative: false});
         }
 
         uint256[] memory result = new uint256[](i);

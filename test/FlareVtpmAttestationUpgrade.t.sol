@@ -24,7 +24,7 @@ contract FlareVtpmAttestationUpgradeTest is Test {
     FlareVtpmAttestationV2 public flareVtpmV2;
     /// @notice Instance of the OIDC verifier contract
     OidcSignatureVerification public oidcVerifier;
-    
+
     /// @notice Implementation contracts
     FlareVtpmAttestation public flareVtpmImpl;
     FlareVtpmAttestationV2 public flareVtpmV2Impl;
@@ -66,13 +66,7 @@ contract FlareVtpmAttestationUpgradeTest is Test {
 
         // Prepare initialization data for FlareVtpmAttestation
         bytes memory flareVtpmInitData = abi.encodeWithSelector(
-            FlareVtpmAttestation.initialize.selector,
-            owner,
-            HWMODEL,
-            SWNAME,
-            IMAGE_DIGEST,
-            ISS,
-            SECBOOT
+            FlareVtpmAttestation.initialize.selector, owner, HWMODEL, SWNAME, IMAGE_DIGEST, ISS, SECBOOT
         );
 
         // Deploy FlareVtpmAttestation proxy
@@ -80,10 +74,7 @@ contract FlareVtpmAttestationUpgradeTest is Test {
         flareVtpm = FlareVtpmAttestation(address(flareVtpmProxy));
 
         // Prepare initialization data for OidcSignatureVerification
-        bytes memory oidcInitData = abi.encodeWithSelector(
-            OidcSignatureVerification.initialize.selector,
-            owner
-        );
+        bytes memory oidcInitData = abi.encodeWithSelector(OidcSignatureVerification.initialize.selector, owner);
 
         // Deploy OidcSignatureVerification proxy
         ERC1967Proxy oidcVerifierProxy = new ERC1967Proxy(address(oidcVerifierImpl), oidcInitData);
@@ -100,7 +91,7 @@ contract FlareVtpmAttestationUpgradeTest is Test {
         // Verify initial state
         assertEq(flareVtpm.owner(), owner);
         assertEq(oidcVerifier.owner(), owner);
-        
+
         // Verify tokenType verifier is set
         bytes memory tokenType = bytes("OIDC");
         assertEq(address(flareVtpm.tokenTypeVerifiers(tokenType)), address(oidcVerifier));
@@ -109,7 +100,7 @@ contract FlareVtpmAttestationUpgradeTest is Test {
     function testVerifyAndAttestBeforeUpgrade() public {
         // Test basic functionality before upgrade
         vm.prank(user);
-        
+
         // This should work if all components are set up correctly
         // Note: This might fail due to signature verification, but it tests the flow
         vm.expectRevert(); // We expect this to revert due to signature issues, but that's OK for testing flow
@@ -233,42 +224,42 @@ contract FlareVtpmAttestationUpgradeTest is Test {
 
     function testCompleteUpgradeFlow() public {
         console.log("=== Testing Complete Upgrade Flow ===");
-        
+
         // 1. Deploy via proxy ✓ (done in setUp)
         console.log("1. Initial deployment complete");
-        
+
         // 2. Call verifyAndAttest to register a quote (simulate successful verification)
         console.log("2. Testing initial functionality...");
-        
+
         // Note: We can't easily test the full verifyAndAttest flow without proper signature setup,
         // but we can test that the function exists and the contract is properly configured
-        
+
         // 3. Upgrade the implementation to V2
         console.log("3. Upgrading to V2...");
         vm.prank(owner);
         flareVtpm.upgradeToAndCall(address(flareVtpmV2Impl), "");
-        
+
         // Cast to V2
         flareVtpmV2 = FlareVtpmAttestationV2(address(flareVtpm));
-        
+
         // 4. Verify state preservation and new function is callable
         console.log("4. Verifying upgrade...");
-        
+
         // Verify existing storage is intact
         assertEq(flareVtpmV2.owner(), owner);
         assertEq(address(flareVtpmV2.tokenTypeVerifiers(bytes("OIDC"))), address(oidcVerifier));
-        
+
         // Verify new functionality
         assertEq(flareVtpmV2.getVersion(), 2);
-        
+
         // Test new function
         vm.prank(owner);
         flareVtpmV2.setNewFeature("Upgrade successful!");
-        
+
         (uint256 version, string memory feature) = flareVtpmV2.getUpgradeInfo();
         assertEq(version, 2);
         assertEq(feature, "Upgrade successful!");
-        
+
         console.log("Complete upgrade flow test passed!");
     }
 }

@@ -11,7 +11,7 @@ import {FlareVtpmAttestation} from "../FlareVtpmAttestation.sol";
 contract FlareVtpmAttestationV2 is FlareVtpmAttestation {
     /// @notice Version number for this contract
     uint256 public constant VERSION = 2;
-    
+
     /// @notice New storage variable added in V2
     string public newFeature;
 

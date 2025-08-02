@@ -62,13 +62,7 @@ contract FlareVtpmAttestationTest is Test {
 
         // Prepare initialization data for FlareVtpmAttestation
         bytes memory flareVtpmInitData = abi.encodeWithSelector(
-            FlareVtpmAttestation.initialize.selector,
-            owner,
-            HWMODEL,
-            SWNAME,
-            IMAGEDIGEST,
-            ISS,
-            SECBOOT
+            FlareVtpmAttestation.initialize.selector, owner, HWMODEL, SWNAME, IMAGEDIGEST, ISS, SECBOOT
         );
 
         // Deploy FlareVtpmAttestation proxy
@@ -76,10 +70,7 @@ contract FlareVtpmAttestationTest is Test {
         flareVtpm = FlareVtpmAttestation(address(flareVtpmProxy));
 
         // Prepare initialization data for OidcSignatureVerification
-        bytes memory oidcInitData = abi.encodeWithSelector(
-            OidcSignatureVerification.initialize.selector,
-            owner
-        );
+        bytes memory oidcInitData = abi.encodeWithSelector(OidcSignatureVerification.initialize.selector, owner);
 
         // Deploy OidcSignatureVerification proxy
         ERC1967Proxy oidcVerifierProxy = new ERC1967Proxy(address(oidcVerifierImpl), oidcInitData);
@@ -200,6 +191,46 @@ contract FlareVtpmAttestationTest is Test {
 
         // Attempt to perform verification and attestation with modified payload
         flareVtpm.verifyAndAttest(HEADER, modifiedPayload, SIGNATURE);
+    }
+
+    function test_pauseAndUnpauseByOwner() public {
+        // Test initial state
+        assertFalse(flareVtpm.paused(), "Contract should start unpaused");
+
+        // Test pause
+        flareVtpm.pause();
+        assertTrue(flareVtpm.paused(), "Contract should be paused");
+
+        // Test unpause
+        flareVtpm.unpause();
+        assertFalse(flareVtpm.paused(), "Contract should be unpaused");
+    }
+
+    function test_pauseAndUnpauseByNonOwner() public {
+        address nonOwner = makeAddr("nonOwner");
+
+        // Test pause by non-owner fails
+        vm.prank(nonOwner);
+        vm.expectRevert();
+        flareVtpm.pause();
+
+        // First pause as owner to test unpause
+        flareVtpm.pause();
+
+        // Test unpause by non-owner fails
+        vm.prank(nonOwner);
+        vm.expectRevert();
+        flareVtpm.unpause();
+    }
+
+    function test_writeAction_RevertWhenPaused() public {
+        // Ensure function works when not paused first
+        flareVtpm.verifyAndAttest(HEADER, PAYLOAD, SIGNATURE); // Should succeed
+
+        // Now pause and test revert
+        flareVtpm.pause();
+        vm.expectRevert("EnforcedPause()");
+        flareVtpm.verifyAndAttest(HEADER, PAYLOAD, SIGNATURE);
     }
 
     /**
